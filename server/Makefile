@@ -2,7 +2,7 @@
 CC = g++
 OBJS = config.o main.o node.pb.o
 TARGET = Onion5_Server
-LIBS = -pthread -lprotobuf
+LIBS = -pthread -lprotobuf -lpsocksxx
 CFLAGS= -std=c++11
 
 
