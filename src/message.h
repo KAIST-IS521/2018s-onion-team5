@@ -9,9 +9,8 @@ class Message
 {
 private : 
 	//Sructure
-	string from_ID;
-	string to_ID;
-	string msg;
+	string from_ID, to_ID, msg;
+	int from_ID_len, to_ID_len;
 
 public : 
 	Message(string from, string to, string MSG);
