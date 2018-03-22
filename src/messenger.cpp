@@ -22,10 +22,10 @@ void Messenger::Init_packet() {
 
         Message * message = new Message(from, to, MSG);
     	message_total.push_back(message);
-	}
-	else
-		cout << "Wrong ID..." << endl;
-
+//	}
+//	else
+//		cout << "Wrong ID..." << endl;
+//
 }	
 
 void Messenger::Make_packet() {
