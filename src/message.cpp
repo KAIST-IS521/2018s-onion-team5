@@ -1,14 +1,19 @@
 #include "message.h"
+#include <iostream>
 
-using namespace std;
 
-Message::Message () {
+Message :: Message (string from, string to, string MSG)
+{
+	from_ID = from;
+	to_ID = to;
+	msg = MSG;
 }
 
-Message::~Message() {
+string Message::Make_string() {
+	
+	string total;
+	
+	total = from_ID + to_ID + msg;
+
+	return total;
 }
-
-Message::Send_Message() {
-}
-
-
