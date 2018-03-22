@@ -7,7 +7,7 @@
 class Messenger
 {
 	vector<Message*> message_total;
-	int msgNum;
+
 public :
 	Messenger();
 	

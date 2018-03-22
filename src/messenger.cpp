@@ -4,22 +4,28 @@
 
 using namespace std;
 
-Messenger::Messenger() : msgNum(0)
+Messenger::Messenger()
 {}
 
 void Messenger::Init_packet() {
 
 	string from, MSG;
-        string from = "moncadeau92@kaist.ac.kr";
+    string from = "moncadeau92@kaist.ac.kr";
+//  int check_IP;
 
-        cout << "Write the ID of receiver: ";
-        cin >> to;
+	cout << "Write the ID of receiver: ";
+    getline(cin, to);
 
+//	if(check_IP == 1) {
         cout << "Write the messsages: ";
-        cin >> MSG;
+        getline(cin, MSG);
 
         Message * message = new Message(from, to, MSG);
-	message_total.push_back(message);
+    	message_total.push_back(message);
+	}
+	else
+		cout << "Wrong ID..." << endl;
+
 }	
 
 void Messenger::Make_packet() {
