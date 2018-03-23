@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "pgp_crypto.h"
+
 //recipient must be string.
 //plain cannot be '\0'
 int pgp_enc(char *plain, int plain_size, char *recipient, char **ciphered) {
