@@ -1,57 +1,25 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+
 #include <ctime>
-#include "node.pb.h"
-#include <google/protobuf/util/time_util.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include <cstdio>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <arpa/inet.h>
+
+// socket wrapper
 #include <psocksxx/tcpnsockstream.h>
+
+#include "node_manage.h"
 
 void call_from_thread() {
   std::cout << "Hello, World" << std::endl;
-}
-
-class NodeManage {
-    Onion5::NodeList node_list;
-  public:
-    NodeManage();
-    ~NodeManage();
-    void add_user(std::string github_id, std::string host);
-    void get_binary();
-    void saveToFile(std::string filename);
-};
-
-NodeManage::NodeManage() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-}
-
-void NodeManage::saveToFile(std::string filename) {
-  std::fstream output(filename, std::ios::out | std::ios::trunc | std::ios::binary);
-  if (!this->node_list.SerializeToOstream(&output)) {
-    std::cerr << "Failed to write." << std::endl;
-  }
-}
-
-NodeManage::~NodeManage() {
-  google::protobuf::ShutdownProtobufLibrary();
-}
-
-void NodeManage::add_user(std::string github_id, std::string host) {
-  Onion5::Node* node = this->node_list.add_nodes();
-  (*node->mutable_github_id()) = github_id;
-  (*node->mutable_ip_addr()) = host;
-  (*node->mutable_last_check()) = google::protobuf::util::TimeUtil::TimeTToTimestamp(time(NULL));
-}
-
-void NodeManage::get_binary() {
-
 }
 
 void send_list(std::string& host) {
@@ -125,45 +93,14 @@ int main() {
     perror("fork");
     return 1;
   }
-  //waitpid(pid, &status, 0);
-  getchar();
-  m.saveToFile("test.bin");
-exit(1);
-/*
-  std::thread t1(call_from_thread);
-  t1.join();
+ 
+  char input;
+  do {
+    intput = getchar();    
+    m.saveToFile("test.bin");
+    puts("s");
+  } while (input != 'c'); 
 
-  Onion5::Node* node = node_list.add_nodes();
-  (*node->mutable_github_id()) = "AhnMo";
-  (*node->mutable_ip_addr()) = "172.17.0.2";
-  (*node->mutable_last_check()) = google::protobuf::util::TimeUtil::TimeTToTimestamp(time(NULL));
-
-  node = node_list.add_nodes();
-  (*node->mutable_github_id()) = "Leeswimmig";
-  (*node->mutable_ip_addr()) = "172.17.0.3";
-  (*node->mutable_last_check()) = google::protobuf::util::TimeUtil::TimeTToTimestamp(time(NULL));
-
-  node = node_list.add_nodes();
-  (*node->mutable_github_id()) = "S-KYUCHAN";
-  (*node->mutable_ip_addr()) = "172.17.0.4";
-  (*node->mutable_last_check()) = google::protobuf::util::TimeUtil::TimeTToTimestamp(time(NULL));
-
-  node = node_list.add_nodes();
-  (*node->mutable_github_id()) = "HOJUNYANG";
-  (*node->mutable_ip_addr()) = "172.17.0.5";
-  (*node->mutable_last_check()) = google::protobuf::util::TimeUtil::TimeTToTimestamp(time(NULL));
-
-  //(node_list).DeleteSubrange(1, 1);
-  (node_list).mutable_nodes()->DeleteSubrange(1, 1);
-
-
-  std::fstream output("test.bin", std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!node_list.SerializeToOstream(&output)) {
-      std::cerr << "Failed to write address book." << std::endl;
-      return -1;
-    }
-
-  google::protobuf::ShutdownProtobufLibrary();
-*/
+  wait(&status);
   return 0;
 }
