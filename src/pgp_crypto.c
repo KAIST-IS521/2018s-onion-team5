@@ -30,7 +30,8 @@ int pgp_enc(char *plain, int plain_size, char *recipient, char **ciphered) {
   strncat(command, "\" ", strlen("\" ") + 1);
   strncat(command, "| gpg --encrypt --armor -r \"", strlen("| gpg --encrypt --armor -r \"") + 1);
   strncat(command, recipient, recipient_len + 1);
-  strncat(command, "\"", strlen("\"") + 1);
+  strncat(command, "\" ", strlen("\" ") + 1);
+  strncat(command, "2>/dev/null ", strlen("2>/dev/null ") + 1);
   //strncat(command, " >> encrypted.asc", 100); // TEMp
 
   file = popen(command, "r");
