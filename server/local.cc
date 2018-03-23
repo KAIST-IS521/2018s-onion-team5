@@ -6,7 +6,6 @@
 using namespace std;
 
 int main() {
-
   NodeManage m;
 
   psocksxx::tcpnsockstream ss;
@@ -29,22 +28,21 @@ int main() {
   psocksxx::nsockstream *css;
   while (true) {
     css = ss.accept();
-    string buf;
 
+    string buf;
     std::getline(*css, buf);
 
     size_t pos = 0;
     std::string token;
 
-    pos = buf.find(" ");// read line by line
-    //cout << buf << endl;
+    pos = buf.find(" ");
     token = buf.substr(0, pos);
     string method = token;
     buf.erase(0, pos + 1);
     if (method.compare("GET") != 0 &&
         method.compare("POST") != 0 &&
         method.compare("DELETE") != 0 ) {
-      (*css) << "HTTP/1.0 204 No Content\r\n\r\n";
+      (*css) << "HTTP/1.0 404 Not Found\r\n\r\n";
       delete css;
       continue;
     }
@@ -52,18 +50,16 @@ int main() {
     pos = buf.find(" ");
     token = buf.substr(0, pos);
     string uri = token;
-    // curl http://localhost:8081/users
-    // curl http://localhost:8081/users -d"test=foobar&fuck=shit"
-    // curl http://localhost:8081/users/AhnMo -XDELETE
     if (method.compare("GET") == 0 && uri.compare("/users") == 0) {
+      // curl http://localhost:8081/users
       string header;
       string content = m.get_binary();
       header += "HTTP/1.0 200 OK\r\n";
       header += "Cotnent-Length: " + std::to_string(content.size()) + "\r\n";
       header += "\r\n";
       (*css) << header << content;
-
     } else if (method.compare("POST") == 0 && uri.compare("/users") == 0) {
+      // curl http://localhost:8081/users -d"test=foobar&fuck=shit"
       string temp;
       int content_size = 0;
       do {
@@ -79,16 +75,36 @@ int main() {
         css->read(bufff, content_size);
         temp = bufff;
         free(bufff);
-        cout << temp << endl;
 
-        m.add_user(temp, "127.0.0.1");
+        string github_id = temp;
+        string ip_address = "127.0.0.1";
+
+        //TODO: temp - tokenize
+        /*
+        while ((pos_end = s.find(delimiter, pos_start)) != string::npos) {
+            token = s.substr(pos_start, pos_end - pos_start);
+            pos_start = pos_end + delim_len;
+            res.push_back(token);
+        }
+
+        token = buf.substr(0, buf.find("&"));
+        */
+
+        //TODO: github_id should be veified
+        //TODO: ip_address should be veified
+
+        m.add_user(github_id, ip_address);
       }
 
       (*css) << "HTTP/1.0 200 OK\r\n\r\n";
     } else if (method.compare("DELETE") == 0 && uri.substr(0, 7).compare("/users/") == 0) {
+      // curl http://localhost:8081/users/AhnMo -XDELETE
       uri.erase(0, 7);
-      cout << uri << endl;
-      (*css) << "HTTP/1.0 204 No Content\r\n\r\n";
+      //TODO: github_id should be veified
+      m.delete_user(uri);
+      (*css) << "HTTP/1.0 200 OK\r\n\r\n";
+    } else {
+      (*css) << "HTTP/1.0 404 Not Found\r\n\r\n";
     }
     delete css;
   }
