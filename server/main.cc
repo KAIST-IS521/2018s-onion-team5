@@ -18,6 +18,9 @@
 
 #include "node_manage.h"
 
+// Debugging purpose
+#include "dumphex.h"
+
 void call_from_thread() {
   std::cout << "Hello, World" << std::endl;
 }
@@ -29,7 +32,9 @@ void send_list(std::string& host) {
   ss << "hello" << std::endl;
 }
 
-void boradcast_listener(NodeManage m) {
+void boradcast_listener() {
+  NodeManage m;
+
   int s, flag;
   struct sockaddr_in bcastAddr;
 
@@ -72,34 +77,27 @@ void boradcast_listener(NodeManage m) {
     github_id = buf;
     ip_addr = inet_ntoa(clntAddr.sin_addr);
 
-    puts(github_id.c_str());
-    puts(ip_addr.c_str());
+    //github_id = github_id.substr(0, github_id.length() - 1);
 
     m.add_user(github_id, ip_addr);
     send_list(ip_addr);
+
+    std::string bu = m.get_binary();
+    DumpHex(bu.c_str(), bu.size());
   }
 }
 
 int main() {
-  NodeManage m;
-
   pid_t pid;
   int status;
 
   pid = fork();
   if (pid == 0)
-    boradcast_listener(m);
+    boradcast_listener();
   else if (pid == -1) {
     perror("fork");
     return 1;
   }
- 
-  char input;
-  do {
-    intput = getchar();    
-    m.saveToFile("test.bin");
-    puts("s");
-  } while (input != 'c'); 
 
   wait(&status);
   return 0;

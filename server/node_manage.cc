@@ -27,13 +27,5 @@ void NodeManage::delete_user(int idx) {
 std::string NodeManage::get_binary() {
   std::ostringstream stream;
   this->node_list.SerializeToOstream(&stream);
-
   return stream.str();
-}
-
-void NodeManage::saveToFile(std::string filename) {
-  std::fstream output(filename, std::ios::out | std::ios::trunc | std::ios::binary);
-  if (!this->node_list.SerializeToOstream(&output)) {
-    std::cerr << "Failed to write." << std::endl;
-  }
 }

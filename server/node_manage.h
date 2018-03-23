@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "node.pb.h"
 
 class NodeManage {
@@ -9,6 +10,5 @@ class NodeManage {
     ~NodeManage();
     void add_user(std::string github_id, std::string host);
     void delete_user(int idx);
-    void get_binary();
-    void saveToFile(std::string filename);
+    std::string get_binary();
 };
