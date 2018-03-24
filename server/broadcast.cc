@@ -3,7 +3,6 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 
-// socket wrapper
 #include <psocksxx/tcpnsockstream.h>
 
 #include <string>
@@ -22,7 +21,6 @@ void send_list(std::string& host) {
 
   content = Client_REST::get_nodes();
   if (content.empty()) {
-    // rest server is dead
     std::cout << "SERVER IS DEAD" << std::endl;
     return;
   }
@@ -78,9 +76,6 @@ void boradcast_listener() {
     github_id = buf;
     ip_addr = inet_ntoa(clntAddr.sin_addr);
 
-    //github_id = github_id.substr(0, github_id.length() - 1);
-
-    //
     github_id.erase(std::find_if(github_id.rbegin(), github_id.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), github_id.end());
 
     Client_REST::add_node(github_id, ip_addr);

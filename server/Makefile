@@ -1,6 +1,6 @@
 
 CC = g++
-OBJS = config.o main.o node_manage.o node.pb.o broadcast.o node_rest.o http_client.o dumphex.o rest_client.o
+OBJS = config.o main.o node_manage.o node.pb.o broadcast.o rest_server.o http_client.o dumphex.o rest_client.o
 TARGET = Onion5_Server
 LIBS = -pthread -lprotobuf -lpsocksxx -lcurl
 CFLAGS= -std=c++11

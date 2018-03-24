@@ -2,12 +2,12 @@
 #include <iostream>
 #include <string>
 #include <psocksxx/tcpnsockstream.h>
-#include "node_rest.h"
+#include "rest_server.h"
 #include "node_manage.h"
 #include "config.h"
 using namespace std;
 
-void node_rest_server() {
+void rest_server() {
   NodeManage m;
 
   psocksxx::tcpnsockstream ss;

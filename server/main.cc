@@ -1,7 +1,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "node_rest.h"
+#include "rest_server.h"
 #include "broadcast.h"
 
 #define FORK_AND_RUN(function) {\
@@ -18,7 +18,7 @@ int main() {
   pid_t pid;
   int status;
 
-  FORK_AND_RUN(node_rest_server);
+  FORK_AND_RUN(rest_server);
   FORK_AND_RUN(boradcast_listener);
 
   wait(&status);
