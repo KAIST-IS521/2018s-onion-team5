@@ -7,9 +7,10 @@
 #include "config.h"
 
 #include <regex>
+#include <vector>
 
 
-void string_split(const std::string& str, vector<string>& cont, char delim=' ') {
+void string_split(const std::string& str, std::vector<std::string>& cont, char delim=' ') {
     std::size_t current, previous = 0;
     current = str.find(delim);
     while (current != std::string::npos) {
@@ -49,7 +50,7 @@ void rest_server() {
 }
 
 void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
-  string buf;
+  std::string buf;
   std::getline(*conn, buf);
 
   size_t pos = 0;
@@ -57,7 +58,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
 
   pos = buf.find(" ");
   token = buf.substr(0, pos);
-  string method = token;
+  std::string method = token;
   buf.erase(0, pos + 1);
   if (method.compare("GET") != 0 &&
       method.compare("POST") != 0 &&
@@ -69,22 +70,22 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
 
   pos = buf.find(" ");
   token = buf.substr(0, pos);
-  string uri = token;
+  std::string uri = token;
 
   std::regex github_id_regex ("^[0-9A-Za-z][0-9A-Za-z-]{0,38}$");
   std::regex ipv4_address_regex("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
 
   if (method.compare("GET") == 0 && uri.compare("/users") == 0) {
     // curl http://localhost:8081/users
-    string header;
-    string content = m.get_binary();
+    std::string header;
+    std::string content = m.get_binary();
     header += "HTTP/1.0 200 OK\r\n";
     header += "Cotnent-Length: " + std::to_string(content.size()) + "\r\n";
     header += "\r\n";
     (*conn) << header << content;
   } else if (method.compare("POST") == 0 && uri.compare("/users") == 0) {
     // curl http://localhost:8081/users -d"test=foobar&fuck=shit"
-    string temp;
+    std::string temp;
     int content_size = 0;
     do {
       getline(*conn, temp);
@@ -101,15 +102,15 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
       free(bufff);
 
       // post data parse
-      string github_id;
-      string ip_address;
+      std::string github_id;
+      std::string ip_address;
 
-      vector<string> output;
+      std::vector<std::string> output;
       string_split(temp, output, '&');
 
       for(auto it = output.begin(); it != output.end(); ++it) {
-        string name = (*it).substr(0, (*it).find("="));
-        string value = (*it).substr((*it).find("=") + 1, (*it).size());
+        std::string name = (*it).substr(0, (*it).find("="));
+        std::string value = (*it).substr((*it).find("=") + 1, (*it).size());
         if (name.compare("github_id") == 0)
           github_id = value;
         else if (name.compare("ip_address") == 0)
@@ -135,7 +136,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
     // curl http://localhost:8081/users/AhnMo -XDELETE
     uri.erase(0, 7);
     //TODO: github_id should be veified
-    if (std::regex_match(github_id, github_id_regex)) {
+    if (std::regex_match(uri, github_id_regex)) {
       m.delete_user(uri);
       (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
     } else {
