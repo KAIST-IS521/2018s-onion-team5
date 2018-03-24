@@ -6,16 +6,31 @@
 // socket wrapper
 #include <psocksxx/tcpnsockstream.h>
 
+#include <string>
+
 #include <unistd.h>
 
 #include "node_manage.h"
+#include "http_client.h"
+#include "config.h"
 #include "dumphex.h"
+#include "rest_client.h"
 
 void send_list(std::string& host) {
-  psocksxx::tcpnsockstream ss;
+  // fetch node list from server
+  std::string content;
 
-  ss.connect(host.c_str(), 6001);
-  ss << "hello" << std::endl;
+  content = Client_REST::get_nodes();
+  if (content.empty()) {
+    // rest server is dead
+    std::cout << "SERVER IS DEAD" << std::endl;
+    return;
+  }
+
+  psocksxx::tcpnsockstream ss;
+  ss.connect(host.c_str(), NODE_PORT);
+  ss << content;
+
 }
 
 void boradcast_listener() {
@@ -65,7 +80,10 @@ void boradcast_listener() {
 
     //github_id = github_id.substr(0, github_id.length() - 1);
 
-    m.add_user(github_id, ip_addr);
+    //
+    github_id.erase(std::find_if(github_id.rbegin(), github_id.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), github_id.end());
+
+    Client_REST::add_node(github_id, ip_addr);
     send_list(ip_addr);
 
     std::string bu = m.get_binary();
