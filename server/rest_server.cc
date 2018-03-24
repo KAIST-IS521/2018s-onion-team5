@@ -5,7 +5,21 @@
 #include "rest_server.h"
 #include "node_manage.h"
 #include "config.h"
-using namespace std;
+
+#include <regex>
+
+
+void string_split(const std::string& str, vector<string>& cont, char delim=' ') {
+    std::size_t current, previous = 0;
+    current = str.find(delim);
+    while (current != std::string::npos) {
+        cont.push_back(str.substr(previous, current - previous));
+        previous = current + 1;
+        current = str.find(delim, previous);
+    }
+    cont.push_back(str.substr(previous, current - previous));
+}
+
 
 void rest_server() {
   NodeManage m;
@@ -56,6 +70,10 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
   pos = buf.find(" ");
   token = buf.substr(0, pos);
   string uri = token;
+
+  std::regex github_id_regex ("^[0-9A-Za-z][0-9A-Za-z-]{0,38}$");
+  std::regex ipv4_address_regex("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
+
   if (method.compare("GET") == 0 && uri.compare("/users") == 0) {
     // curl http://localhost:8081/users
     string header;
@@ -70,7 +88,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
     int content_size = 0;
     do {
       getline(*conn, temp);
-      cout << temp.size() << ':' << temp << endl;
+      //cout << temp.size() << ':' << temp << endl;
       if (temp.substr(0, 16).compare("Content-Length: ") == 0) {
         content_size = stoi(temp.erase(0, 16));
       }
@@ -82,35 +100,50 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
       temp = bufff;
       free(bufff);
 
-      string github_id = temp;
-      string ip_address = "127.0.0.1";
+      // post data parse
+      string github_id;
+      string ip_address;
 
-      //TODO: temp - tokenize
-      /*
-      while ((pos_end = s.find(delimiter, pos_start)) != string::npos) {
-          token = s.substr(pos_start, pos_end - pos_start);
-          pos_start = pos_end + delim_len;
-          res.push_back(token);
+      vector<string> output;
+      string_split(temp, output, '&');
+
+      for(auto it = output.begin(); it != output.end(); ++it) {
+        string name = (*it).substr(0, (*it).find("="));
+        string value = (*it).substr((*it).find("=") + 1, (*it).size());
+        if (name.compare("github_id") == 0)
+          github_id = value;
+        else if (name.compare("ip_address") == 0)
+          ip_address = value;
       }
+      output.clear();
 
-      token = buf.substr(0, buf.find("&"));
-      */
-
-      //TODO: github_id should be veified
-      //TODO: ip_address should be veified
-
-      m.add_user(github_id, ip_address);
+      if (
+        std::regex_match(github_id, github_id_regex) &&
+        std::regex_match(ip_address, ipv4_address_regex)
+      ) {
+        m.add_user(github_id, ip_address);
+        (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
+      } else { // input varify fail
+        (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
+      }
+    } else {
+      (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
     }
 
-    (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
+
   } else if (method.compare("DELETE") == 0 && uri.substr(0, 7).compare("/users/") == 0) {
     // curl http://localhost:8081/users/AhnMo -XDELETE
     uri.erase(0, 7);
     //TODO: github_id should be veified
-    m.delete_user(uri);
-    (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
+    if (std::regex_match(github_id, github_id_regex)) {
+      m.delete_user(uri);
+      (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
+    } else {
+      (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
+    }
   } else {
-    (*conn) << "HTTP/1.0 404 Not Found\r\n\r\n";
+    (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
+    //(*conn) << "HTTP/1.0 404 Not Found\r\n\r\n";
   }
   delete conn;
 }
