@@ -1,11 +1,19 @@
 #include "http_client.h"
 
+#define CURL_STATICLIB
+#include <curl/curl.h>
+
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
 
-bool http_get(std::string url, std::string& str) {
+bool HTTP::_get(std::string url) {
+  std::string dummy;
+  return HTTP::_get(url, dummy);
+}
+
+bool HTTP::_get(std::string url, std::string& str) {
   CURL *curl;
   CURLcode res;
   int ret = false;
@@ -19,6 +27,7 @@ bool http_get(std::string url, std::string& str) {
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
+
     res = curl_easy_perform(curl);
 
     if(res == CURLE_OK) {
@@ -32,7 +41,12 @@ bool http_get(std::string url, std::string& str) {
   return ret;
 }
 
-bool http_post(std::string url, std::string content, std::string& str) {
+bool HTTP::_post(std::string url, std::string content) {
+  std::string dummy;
+  return  HTTP::_post(url, content, dummy);
+}
+
+bool HTTP::_post(std::string url, std::string content, std::string& str) {
   CURL *curl;
   CURLcode res;
   int ret = false;
@@ -48,6 +62,7 @@ bool http_post(std::string url, std::string content, std::string& str) {
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
+
     res = curl_easy_perform(curl);
 
     if(res == CURLE_OK) {
@@ -61,7 +76,12 @@ bool http_post(std::string url, std::string content, std::string& str) {
   return ret;
 }
 
-bool http_delete(std::string url, std::string& str) {
+bool HTTP::_delete(std::string url) {
+  std::string dummy;
+  return HTTP::_delete(url, dummy);
+}
+
+bool HTTP::_delete(std::string url, std::string& str) {
   CURL *curl;
   CURLcode res;
   int ret = false;
@@ -77,6 +97,7 @@ bool http_delete(std::string url, std::string& str) {
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
+
     res = curl_easy_perform(curl);
 
     if(res == CURLE_OK) {
