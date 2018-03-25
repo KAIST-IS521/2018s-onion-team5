@@ -6,15 +6,21 @@
 
 class Messenger
 {
-	vector<Message*> message_total;
+	std::vector<Message*> message_enc;
+	std::vector<Message*> message_history;
 
 public :
 	Messenger();
-	
+
+	void Show_Info();	
 	void Init_packet();
 	void Make_packet();
-	void Recv_packet();
-	void Del_packet();
+	int Recv_packet();//std::string dec_msg);
+	void Del_enc_packet();
+	void Del_history_packet();
+	void Packet_History();
+	
+	int Main();
 };
 
 #endif

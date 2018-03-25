@@ -3,19 +3,22 @@
 
 #include <string>
 
-using namespace std;
 
 class Message
 {
-private : 
+public : 
 	//Sructure
-	string from_ID, to_ID, msg;
-	unsigned char from_ID_len, to_ID_len;
+	std::string from_ID, to_ID, msg;
+	std::string SIG_HEAD, SIG_TAIL;
+	char from_len, to_len;
 
 public : 
-	Message(string from, string to, string MSG);
+	Message(std::string from, std::string to, std::string MSG);
 
-	string Make_string(); //Convert Message to string
+	std::string Make_array(); //Convert Message to string
+	
+
+	void Show_msg();
 };
 
 #endif
