@@ -104,7 +104,7 @@ int pgp_dec(char *input_file_name, char *passphrase, char *output_file_name) {
     goto EXIT;
   }
   memset(command, 0, sizeof(char) * (input_file_name_len + passphrase_len + output_file_name_len + 200));
-  printf("malloc size:%zu\n",sizeof(char) * (input_file_name_len + passphrase_len + output_file_name_len + 200));
+  //printf("malloc size:%zu\n",sizeof(char) * (input_file_name_len + passphrase_len + output_file_name_len + 200));
 
   strncat(command, "gpg ", strlen("gpg ") + 1);
   strncat(command, "-o \"", strlen("-o \"") + 1);
@@ -118,7 +118,7 @@ int pgp_dec(char *input_file_name, char *passphrase, char *output_file_name) {
   strncat(command, "\" ", strlen("\" ") + 1);
   strncat(command, "2>/dev/null ", strlen("2>/dev/null ") + 1);
   strncat(command, "&& echo -n \"OK\" || echo -n \"KO\"", strlen("&& echo -n \"OK\" || echo -n \"KO\"") + 1);
-	printf("%s\n",command);
+	//printf("%s\n",command);
 
   file = popen(command, "r");
   if (!file) {
@@ -127,7 +127,7 @@ int pgp_dec(char *input_file_name, char *passphrase, char *output_file_name) {
   }
 
   cnt = fread(buff, sizeof(char), strlen("OK"), file);
-  printf("read_length:%d, string: %s\n",cnt,buff);
+  //printf("read_length:%d, string: %s\n",cnt,buff);
 
   //Check it is decrypted well
   if (cnt == 2) {
