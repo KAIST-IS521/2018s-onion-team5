@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
     execlp(
       "/usr/bin/gpg",
       "gpg",
+        "--batch", 
         "--no-use-agent",
         "-o" "/dev/null",
         "--local-user", name.c_str(),
