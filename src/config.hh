@@ -2,4 +2,5 @@
 
 #include <string>
 
-extern std::string base_repo;
+extern const std::string base_repo;
+extern const int BROADCAST_PORT;
