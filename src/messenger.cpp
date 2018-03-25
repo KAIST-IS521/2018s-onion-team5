@@ -123,7 +123,7 @@ void Messenger::Del_enc_packet() {
 
 void Messenger::Del_history_packet() {
 
-	{
+	while(!message_history.empty()) {{
 		Message* message_del = message_history.back();
 		delete message_del;
 		message_history.pop_back();

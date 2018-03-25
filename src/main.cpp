@@ -9,12 +9,9 @@ int main() {
 	
 	Messenger messenger1;
 
-	if(messenger1.Main() == 0) {
-
-		return 0;
-
+	while(messenger1.Main() != 0) {
 	}
 
 //	check = messenger1.Recv_packet();
-	
+	return 0;
 } 
