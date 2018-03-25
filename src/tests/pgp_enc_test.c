@@ -9,26 +9,16 @@
 
 char *output_file_name = NULL;
 char *input_file_name = NULL;
-char *plain = NULL;
 char *recipient = NULL;
 
-FILE *fp = NULL;
-char *ciphered = NULL;
-char *buff = NULL;
-
 void usage(char *prog) {
-  printf("Usage: %s [mfo] -m \"plain\" | -f \"file path\" -r recipient\n", prog);
-  printf("\t-o output_file [Default stdout]\n");
+  printf("Usage: %s [fro] -f \"input_file\" -r recipient -o \"output_file\"\n", prog);
 }
 
 void parse_args(int argc, char **argv) {
   int opt;
-  while ((opt = getopt(argc, argv, "mfor")) != -1) {
-
+  while ((opt = getopt(argc, argv, "fro")) != -1) {
     switch (opt) {
-    case 'm':
-      plain = argv[optind];
-      break;
     case 'f':
       input_file_name = argv[optind];
       break;
@@ -43,20 +33,12 @@ void parse_args(int argc, char **argv) {
       exit(-1);
     }
   }
-  if (!input_file_name && !plain) {
-    usage(argv[0]);
-    exit(-1);
-  }
-  if (input_file_name && plain) {
-    usage(argv[0]);
-    exit(-1);
-  }
-  if (!recipient) {
+  if (!input_file_name || !recipient || !output_file_name) {
     usage(argv[0]);
     exit(-1);
   }
 }
-
+/*
 void base_init() {
 	ciphered = malloc(sizeof(char)*1024*1024*1024);
 	if (!ciphered) {
@@ -71,6 +53,7 @@ void base_init() {
 		exit(-1);
 	}
 	memset(buff, 0, sizeof(char) * 1024*1024*1024);
+
 	if(input_file_name) {
 		fp = fopen(input_file_name, "rb");
 		if (!fp) {
@@ -79,6 +62,7 @@ void base_init() {
 		}
 	}	
 }
+
 void base_free() {
 	if (ciphered)
 		free(ciphered);
@@ -87,66 +71,21 @@ void base_free() {
 	if (fp)
 		fclose(fp);
 }
+*/
 
 int main(int argc, char **argv) {
-	int f_size = -1;
-	int cnt = -2;
 	int ret = -1;	
-	int plain_len = -1;
-	/*
-	if (argc < 3) {
-		usage(argv[0]);
-		exit(-1);
-	}
-	*/
+
 	parse_args(argc, argv);
-	base_init();
-
-	if (plain) {
-		plain_len = strlen(plain);
-		printf("plain_len : %d\n",plain_len);
-		ret = pgp_enc(plain, plain_len, recipient, &ciphered);
-		if (ret == 0) {
-			printf("Encryption Success\n");
-			if (output_file_name) {
-				FILE *fp_w = fopen(output_file_name,"w");
-				fputs(ciphered,fp_w);
-				fclose(fp_w);
-			}
-			else {
-				printf("%s\n",ciphered);
-			}
-		}
-		else {
-			printf("Encryption failed\n");
-		}
+	//base_init();
+	ret = pgp_enc(input_file_name, recipient, output_file_name);
+	if (ret == 0) {
+		printf("Encryption Success\n");
 	}
-
-	if (input_file_name) {
-		f_size = get_file_size(fp);
-		cnt = fread(buff, sizeof(char), f_size, fp);
-		if (f_size == cnt) {
-			plain_len = f_size;
-			ret = pgp_enc(buff, plain_len, recipient, &ciphered);
-			if (ret == 0) {
-				printf("Encryption Success\n");
-				if (output_file_name) {
-					FILE *fp_w = fopen(output_file_name,"w");
-					fputs(ciphered,fp_w);
-					fclose(fp_w);
-				}
-				else {
-					printf("%s\n",ciphered);
-				}
-			}
-			else {
-				printf("Encryption failed\n");
-			}
-		}
-	}	
-
-EXIT:
-	base_free();
+	else {
+		printf("Encryption failed\n");
+	}
+	//base_free();
 
 	return 0;
 }
