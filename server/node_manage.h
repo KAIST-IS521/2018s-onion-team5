@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "node.pb.h"
+#include "../common/node.pb.h"
 
 class NodeManage {
     Onion5::NodeList node_list;

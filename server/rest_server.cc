@@ -4,10 +4,12 @@
 #include <psocksxx/tcpnsockstream.h>
 #include "rest_server.h"
 #include "node_manage.h"
-#include "config.h"
+#include "../common/config.h"
 
 #include <regex>
 #include <vector>
+
+#include "../common/dumphex.h"
 
 
 void string_split(const std::string& str, std::vector<std::string>& cont, char delim=' ') {
@@ -63,7 +65,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
   if (method.compare("GET") != 0 &&
       method.compare("POST") != 0 &&
       method.compare("DELETE") != 0 ) {
-    (*conn) << "HTTP/1.0 404 Not Found\r\n\r\n";
+    (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
     delete conn;
     return;
   }
@@ -84,12 +86,10 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
     header += "\r\n";
     (*conn) << header << content;
   } else if (method.compare("POST") == 0 && uri.compare("/users") == 0) {
-    // curl http://localhost:8081/users -d"test=foobar&fuck=shit"
     std::string temp;
     int content_size = 0;
     do {
       getline(*conn, temp);
-      //cout << temp.size() << ':' << temp << endl;
       if (temp.substr(0, 16).compare("Content-Length: ") == 0) {
         content_size = stoi(temp.erase(0, 16));
       }
@@ -101,12 +101,14 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
       temp = bufff;
       free(bufff);
 
-      // post data parse
+      temp = temp.substr(0, content_size);
+
       std::string github_id;
       std::string ip_address;
 
       std::vector<std::string> output;
       string_split(temp, output, '&');
+
 
       for(auto it = output.begin(); it != output.end(); ++it) {
         std::string name = (*it).substr(0, (*it).find("="));
@@ -115,6 +117,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
           github_id = value;
         else if (name.compare("ip_address") == 0)
           ip_address = value;
+
       }
       output.clear();
 
@@ -124,7 +127,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
       ) {
         m.add_user(github_id, ip_address);
         (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
-      } else { // input varify fail
+      } else {
         (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
       }
     } else {
@@ -133,9 +136,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
 
 
   } else if (method.compare("DELETE") == 0 && uri.substr(0, 7).compare("/users/") == 0) {
-    // curl http://localhost:8081/users/AhnMo -XDELETE
     uri.erase(0, 7);
-    //TODO: github_id should be veified
     if (std::regex_match(uri, github_id_regex)) {
       m.delete_user(uri);
       (*conn) << "HTTP/1.0 200 OK\r\n\r\n";
@@ -144,7 +145,6 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
     }
   } else {
     (*conn) << "HTTP/1.0 400 Bad Request\r\n\r\n";
-    //(*conn) << "HTTP/1.0 404 Not Found\r\n\r\n";
   }
   delete conn;
 }

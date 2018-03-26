@@ -1,10 +1,14 @@
 
 CC = g++
-OBJS = config.o main.o node_manage.o node.pb.o broadcast.o rest_server.o http_client.o dumphex.o rest_client.o
-TARGET = Onion5_Server
-LIBS = -pthread -lprotobuf -lpsocksxx -lcurl
-CFLAGS= -std=c++11
+OBJS = main.o node_manage.o\
+broadcast_server.o rest_server.o \
+rest_client.o ../common/http_client.o \
+../common/dumphex.o ../common/node.pb.o \
+../common/config.o
 
+TARGET = Onion5_server
+LIBS = -lprotobuf -lpsocksxx -lcurl
+CFLAGS= -std=c++11
 
 .SUFFIXES : .cc .o
 
