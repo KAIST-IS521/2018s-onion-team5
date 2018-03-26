@@ -7,8 +7,8 @@ extern const int BROADCAST_PORT;
 extern const int NODE_PORT;
 extern const int REST_SERV_PORT;
 
-#define BROADCAST_PREFIX "\xBA\xAA"
-#define BROADCAST_POSTFIX "\xBA\xAA"
+#define BROADCAST_PREFIX  "\xBA\xAA"
+#define BROADCAST_POSTFIX "\xAA\xAD"
 
 #define LIST_PREFIX  "\xD1\x5E"
 #define LIST_POSTFIX "\xAE\xEE"
