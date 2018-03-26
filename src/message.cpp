@@ -2,12 +2,11 @@
 #include <ctime>
 #include <iostream>
 
-Message :: Message (std::string from, std::string to, std::string MSG, std::string flag, std::string timestamp) : from_ID(from), to_ID(to), msg(MSG)
+Message :: Message (std::string from, std::string to, std::string MSG, std::string timestamp) : from_ID(from), to_ID(to), msg(MSG)
 {
 	SIG_HEAD = "\xde\xad";
 	SIG_TAIL = "\xf0\x0d";
 	this->Time = timestamp;
-	this->Flag = flag;
 	this->from_len = (char)from_ID.size();
 	this->to_len = (char)to_ID.size();
 	this->Time_len = (char)Time.size();
@@ -25,7 +24,6 @@ std::string Message::Make_array() {
 	total += to_ID;
 	total += Time_len;
 	total += Time;
-	total += Flag;
 	total += SIG_TAIL;;
 	total += msg;
 	

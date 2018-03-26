@@ -12,6 +12,5 @@ int main() {
 	while(messenger1.Main() != 0) {
 	}
 
-//	check = messenger1.Recv_packet();
 	return 0;
 } 

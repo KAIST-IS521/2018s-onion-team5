@@ -2,10 +2,12 @@
 #include "messenger.h"
 //#include "pgp_crypto.h"
 #include <iostream>
+#include <fstream>
 //#include <cstring>
 //Test
 #define FROM "moncadeau92@kasit.ac.kr"
 #define TO "moncadeau92@gmail.com"
+#define PATH "~/IS521/Test/Enc.txt"
 
 Messenger::Messenger() 
 {}
@@ -25,48 +27,33 @@ void Messenger::Show_Info() {
 
 	std::cout << "------------Oninon Messenger------------" << std::endl << std::endl;
 	std::cout << "1. Send message" << std::endl;
-	std::cout << "2. Send files" << std::endl;
-	std::cout << "3. Chatting Room" << std::endl;
-	std::cout << "4. Exit" << std::endl ;//<< std::endl;
+	std::cout << "2. Chatting Room" << std::endl;
+	std::cout << "3. Exit" << std::endl ;//<< std::endl;
 //
-	std::cout << "5. Receive test" << std::endl << std::endl;
+	std::cout << "4. Receive test" << std::endl << std::endl;
 }
 
 //Initial message packet
-void Messenger::Init_packet(int choice) {
+void Messenger::Init_packet() {
 
 	std::string to, MSG, file_path;
 	std::string timestamp = Timestamp();
-	std::string flag;
-        std::string from = FROM;   //client ID address
+    std::string from = FROM;   //client ID address
 //	int check_id = 1;			   //check receiver address
 
-        std::cout << "Write the ID of receiver: ";      //final receiver ID address
-        std::getline(std::cin, to);
+    std::cout << "Write the ID of receiver: ";      //final receiver ID address
+    std::getline(std::cin, to);
 //	int check_IP = bool();  		   //check if the reciever ID is valid
 
 //
 //	if(check_id == 1) {
 	
-	if(choice == 1) {
-		flag = "1";
 		std::cout << "Write the messsages: ";   //Messages
 		std::getline(std::cin, MSG);
 		std::cout << std::endl;
-	       	Message * message = new Message(from, to, MSG, flag, timestamp);
+      	Message * message = new Message(from, to, MSG, timestamp);
 		message_enc.push_back(message);
 		message_history.push_back(message);
-	}
-	else if(choice == 2) {
-/*		flag = "2";
-		std::cout << "Write the file path: ";
-		std::getline(std::cin, flag_path);
-		std::cout << std::endl;
-
-		Message * message = new Message(from, to, MSG, flag);
-		message_enc.push_back(message);
-		message_history.push_back(message);
-*/	}
 //	}
 //	else {
 //		std::cout << "Wrong ID..." << std::endl;
@@ -76,7 +63,6 @@ void Messenger::Init_packet(int choice) {
 //Packet wrapping
 void Messenger::Make_packet() { //string from, string to) {
 
-	std::string flag = "2";
 	std::string timestamp = Timestamp();
 	std::string from, to; 		//delete later
 	Message * message_prev = message_enc.back();
@@ -85,12 +71,34 @@ void Messenger::Make_packet() { //string from, string to) {
 
 	std::string MSG = message_prev->Make_array();  //MSG should be encrypted
 
-//	enc_check = pgp_enc(MGS.c_str(), MSG.size(), to.c_str(), &MSG_enc);
-		
-//	std::cout << MSG_enc << std::endl;
-
-	Message * message = new Message(from, to, MSG, flag, timestamp);
+	//make file for encrypt
+	std::ofstream enc_prev_file;
+	enc_prev_file.open("./Enc.pub");
+	enc_prev_file << MSG;
+	enc_prev_file.close();
+	std::cout << to << std::endl;
+//test
+	Message * message = new Message(from, to, MSG, timestamp);
 	message_enc.push_back(message);
+
+
+//	int enc_check = pgp_enc("Enc.pub", to, "Enc.pub");
+//	std::string MSG_enc;
+/*	if(enc_check == 0) {
+		std::ifstream enc_file;
+		enc_file.open("./Enc.pub");
+		std::string MSG_enc;
+		enc_file >> MSG_enc;
+		std::cout << "Encypt success!" << std::endl;
+		std::cout << MSG_enc << std::endl;
+		enc_file.close();
+		Message * message = new Message(from, to, MSG_enc, timestamp);
+		message_enc.push_back(message);
+	}
+	else
+		std::cout << "Encrpyt failed" << std::endl;
+*/
+
 }
 
 int Messenger::Recv_packet(){  //std::string dec_msg) {
@@ -101,7 +109,6 @@ int Messenger::Recv_packet(){  //std::string dec_msg) {
 	std::string SIG_HEAD = "\xde\xad";
 	std::string SIG_TAIL = "\xf0\x0d";
 	std::string SIG_HEAD_dec = MSG.substr(0, 2);
-	std::string Flag = "2";
 
 	if(SIG_HEAD.compare(SIG_HEAD_dec) != 0){
 		
@@ -115,14 +122,12 @@ int Messenger::Recv_packet(){  //std::string dec_msg) {
 	std::string to = MSG.substr(4 + from_len, to_len);
 	int Time_len = *(ptr + 4 + from_len + to_len);
 	std::string timestamp = MSG.substr(5 + from_len + to_len, Time_len);
-//	int flag = *(ptr + 5 + from_len + to_len + Time_len);
-	std::string SIG_TAIL_dec = MSG.substr(6 + from_len + to_len + Time_len, 2);
+	std::string SIG_TAIL_dec = MSG.substr(5 + from_len + to_len + Time_len, 2);
 	if(SIG_TAIL.compare(SIG_TAIL_dec) != 0) {
 		std::cout << "Format Error!" << std::endl;
 		return -1;
 	}
-	std::string msg = MSG.substr(7 + from_len + to_len);
-
+	std::string msg = MSG.substr(7 + from_len + to_len + Time_len);
 //check whether from ID is mine
 /*	if(from.compare(FROM) == 0) {
 	
@@ -137,9 +142,8 @@ int Messenger::Recv_packet(){  //std::string dec_msg) {
 	if(to.compare(TO) == 0) {
 
 		//decode packet
-		std::cout << "1111" << std::endl;
-		Message * message = new Message(from, to, msg, Flag, timestamp);
-		message_history.push_back(message);
+		Message * message = new Message(from, to, msg, timestamp);
+//		message_history.push_back(message);
 		message->Show_msg();
 		return 0;
 	}
@@ -153,10 +157,11 @@ int Messenger::Recv_packet(){  //std::string dec_msg) {
 //Delete Message classes
 void Messenger::Del_enc_packet() {
 
-	for(std::vector<Message*>::iterator Msg = message_enc.end(); Msg != message_enc.begin() + 1; Msg--) {
+	for(std::vector<Message*>::iterator Msg = message_enc.begin() + 1; Msg != message_enc.end(); Msg++) {
 		delete *Msg;
-		message_enc.pop_back();
-	}	
+	}
+//	message_enc.erase(message_enc.begin() + 1, message_enc.end());
+	message_enc.clear();
 }
 
 void Messenger::Del_history_packet() {
@@ -212,24 +217,21 @@ int Messenger::Main() {
 
 		switch(choice){
 		case 1:	
-			Init_packet(choice);
+			Init_packet();
 			
-//			Make_packer();
-//			Del_enc_packet();
-			break;
-		case 2:
-			Init_packet(choice);
+			Make_packet();
+			Del_enc_packet();
 			break;
 
-		case 3:
+		case 2:
 			Packet_History();
 			break;
-		case 4:
+		case 3:
 			Del_history_packet();
 			return 0;
 
 ///Receive test
-		case 5:
+		case 4:
 			test = Recv_packet();
 			if(test)
 				break;

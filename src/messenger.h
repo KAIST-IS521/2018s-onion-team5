@@ -4,6 +4,7 @@
 #include "message.h"
 #include <vector>
 
+
 class Messenger
 {
 	std::vector<Message*> message_enc;
@@ -14,7 +15,7 @@ public :
 
 	std::string Timestamp();
 	void Show_Info();	
-	void Init_packet(int choice);
+	void Init_packet();
 	void Make_packet();
 	int Recv_packet();//std::string dec_msg);
 	void Del_enc_packet();
