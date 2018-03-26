@@ -1,6 +1,7 @@
 
 #include "dumphex.h"
 #include <stdio.h>
+#include <string>
 
 void DumpHex(const void* data, size_t size) {
   char ascii[17];
@@ -29,4 +30,8 @@ void DumpHex(const void* data, size_t size) {
       }
     }
   }
+}
+
+void DumpHex(const std::string data) {
+  DumpHex(data.c_str(), data.size());
 }
