@@ -37,7 +37,7 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
     std::cout << "ACCEPT" << std::endl;
 
 		(* css) >> msg;
-
+    DumpHex(msg);
     std::cout << "GET" << std::endl;
 
     // node list

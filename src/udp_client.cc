@@ -34,10 +34,10 @@ void advertise(std::string github_id) {
 
   std::string buf;
 
-  buf += "\xBA\xAA";
+  buf += BROADCAST_PREFIX;
   buf += (char) github_id.size();
   buf += github_id;
-  buf += "\xAA\xAD";
+  buf += BROADCAST_POSTFIX;
 
   int result;
   if ((result = sendto(sock, buf.c_str(), buf.size(), 0,

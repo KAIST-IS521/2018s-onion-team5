@@ -69,14 +69,13 @@ void boradcast_listener() {
       exit(1);
     }
     buf[bufLen] = 0;
-
-    if (buf[0] == '\xBA' && buf[1] == '\xAA') {
+    string buff(buf, bufLen);
+    if (buff.substr(0, 2).compare(BROADCAST_PREFIX) == 0) {
+      //int size = buf[2];
       int size = buf[2];
-      if (buf[size + 3] == '\xAA' && buf[size + 4] == '\xAD') {
-        github_id.resize(size);
-        for (int i = 0; i < size; ++i) {
-          github_id[i] = buf[3 + i];
-        }
+      int size = buff.size();
+      if (buff.substr(size - 2, 2).compare(BROADCAST_POSTFIX) == 0) {
+        github_id = buff.substr(3, size - 5);
       }
     }
 
