@@ -12,8 +12,9 @@ class Messenger
 public :
 	Messenger();
 
+	std::string Timestamp();
 	void Show_Info();	
-	void Init_packet();
+	void Init_packet(int choice);
 	void Make_packet();
 	int Recv_packet();//std::string dec_msg);
 	void Del_enc_packet();
