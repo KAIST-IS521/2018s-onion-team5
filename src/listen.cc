@@ -2,9 +2,11 @@
 #include <map>
 #include <psocksxx/tcpnsockstream.h>
 
+#include "../common/config.h"
 #include "listen.h"
 #include "../common/dumphex.h"
 #include "../common/sha1.hpp"
+
 void listener(std::string github_id, std::map<std::string, std::string> &list) {
   psocksxx::tcpnsockstream ss;
   psocksxx::nsockaddr naddr("0.0.0.0", "9099");
@@ -30,17 +32,20 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
 
 		(* css) >> msg;
 
-    if (msg[0] == '\xd1' && msg[1] == '\x5e') {
-      // node list
+    // node list
+    if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
       int len = msg.size();
-      if (msg[len - 2] == '\xAE' && msg[len - 1] == '\xEE') {
+      if (msg.substr(len - 2, 2).compare(LIST_PREFIX) == 0) {
+        Onion5::NodeList node_list;
         msg = msg.substr(2, len - 4);
-        //address_book.ParseFromIstream(&input);
+        node_list.ParseFromString(msg);
       }
-    } else if (msg[0] == '\xFE' && msg[1] == '\xED') {
-      // health check
+    }
+    // health check
+    else if (msg.substr(0, 2).compare(PING_PREFIX) == 0) {
+
       int len = msg.size();
-      if (msg[len - 2] == '\xFA' && msg[len - 1] == '\xCE') {
+      if (msg.substr(len - 2, 2).compare(PING_POSTFIX) == 0) {
         std::string key = msg.substr(2, len - 4);
         std::string msg;
 
@@ -54,9 +59,13 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         checksum2.update(msg);
         msg = checksum2.final();
 
-        (*css) << "\xFE\xED" << msg << "\xF0\x0D";
+        DumpHex(msg);
+
+        (*css) << PONG_PREFIX << msg << PONG_POSTFIX;
       }
-    } else if (false) {
+    }
+    // encrypted packet
+    else if (false) {
       // encrypted packet
 
     }

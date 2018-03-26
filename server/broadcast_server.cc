@@ -25,8 +25,7 @@ void send_list(std::string& host) {
 
   psocksxx::tcpnsockstream ss;
   ss.connect(host.c_str(), NODE_PORT);
-  ss << "\xd1\x5e" << content << "\xAE\xEE";
-
+  ss << LIST_PREFIX << content << LIST_POSTFIX;
 }
 
 void boradcast_listener() {
@@ -71,8 +70,6 @@ void boradcast_listener() {
     }
     buf[bufLen] = 0;
 
-    DumpHex(buf, bufLen);
-
     if (buf[0] == '\xBA' && buf[1] == '\xAA') {
       int size = buf[2];
       if (buf[size + 3] == '\xAA' && buf[size + 4] == '\xAD') {
@@ -84,16 +81,12 @@ void boradcast_listener() {
     }
 
     if (!github_id.empty()) {
-      //github_id = buf;
       ip_addr = inet_ntoa(clntAddr.sin_addr);
-      //puts(ip_addr.c_str());
+
       github_id.erase(std::find_if(github_id.rbegin(), github_id.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), github_id.end());
 
       Client_REST::add_node(github_id, ip_addr);
       send_list(ip_addr);
-
-      //std::string bu = m.get_binary();
-      //DumpHex(bu.c_str(), bu.size());
     }
   }
 }
