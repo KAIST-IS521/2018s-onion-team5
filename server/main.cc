@@ -1,6 +1,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string>
+#include <cstdio>
 
 #include "rest_server.h"
 #include "broadcast_server.h"
@@ -24,7 +25,11 @@ int main(int argc, char *argv[]) {
   bool broadcast = false;
   bool health    = false;
 
-  if (argc > 2) {
+  if (argc < 2) {
+    rest = true;
+    broadcast = true;
+    health = true;
+  } else {
     std::string target;
 
     target = "REST";
@@ -35,11 +40,9 @@ int main(int argc, char *argv[]) {
 
     target = "HEALTH";
     health = target.compare(argv[1]) == 0;
-  } else {
-    rest = true;
-    broadcast = true;
-    health = true;
   }
+
+  printf("%d %d %d\n", rest, broadcast, health);
 
   if (rest)
   FORK_AND_RUN(rest_server);

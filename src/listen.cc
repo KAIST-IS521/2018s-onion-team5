@@ -1,8 +1,10 @@
 #include <string>
 #include <map>
 #include <psocksxx/tcpnsockstream.h>
+#include <iostream>
 
 #include "../common/config.h"
+#include "../common/node.pb.h"
 #include "listen.h"
 #include "../common/dumphex.h"
 #include "../common/sha1.hpp"
@@ -26,11 +28,17 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
   }
 
   psocksxx::nsockstream * css;
-	std::string msg;
+
+  std::cout << "LISTEN 9099" << std::endl;
 	for (;;) {
+    std::string msg;
+
 		css = ss.accept();
+    std::cout << "ACCEPT" << std::endl;
 
 		(* css) >> msg;
+
+    std::cout << "GET" << std::endl;
 
     // node list
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
@@ -59,9 +67,10 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         checksum2.update(msg);
         msg = checksum2.final();
 
+        msg = PONG_PREFIX + msg + PONG_POSTFIX;
         DumpHex(msg);
 
-        (*css) << PONG_PREFIX << msg << PONG_POSTFIX;
+        (*css) << msg;
       }
     }
     // encrypted packet

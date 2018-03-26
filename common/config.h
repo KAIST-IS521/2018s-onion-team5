@@ -14,4 +14,4 @@ extern const int REST_SERV_PORT;
 #define PING_POSTFIX "\xFA\xCE"
 
 #define PONG_PREFIX  "\xFE\xED"
-#define PONG_POSTFIX "\xF0\x0D"
+#define PONG_POSTFIX "\xF0\xDD"
