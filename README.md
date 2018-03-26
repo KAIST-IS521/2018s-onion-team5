@@ -15,11 +15,12 @@
 ### Summary
 
 ### Installation
+```
+$ sudo apt -y install libcurl4-openssl-dev libpsocksxx-dev
+```
 
 ### Usage
 
 ### Protocol Spec
 
 ## Reference
-
-
