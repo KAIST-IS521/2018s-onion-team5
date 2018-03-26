@@ -4,12 +4,20 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <map>
+#include <string>
 
-#include "fetch_key.hh"
+
+#include "fetch_key.h"
+#include "listen.h"
 
 #define TEMPFILE "/tmp/fofofofoffff"
 
 int main(int argc, char *argv[]) {
+  std::map<std::string, std::string> node_list;
+  listener("AhnMo", node_list);
+
+  /*
   std::string passphrase;
 
   std::string name("TestTest");
@@ -20,11 +28,6 @@ int main(int argc, char *argv[]) {
   pid_t pid;
   int status = 0;
 
-/*
-  char buff[BUFSIZ];
-  sprintf(buff, "ls -al /proc/%d/fd", getpid());
-  system(buff);
-*/
   pid = fork();
   if (pid < 0) { }
   else if (pid == 0) {
@@ -38,7 +41,7 @@ int main(int argc, char *argv[]) {
     execlp(
       "/usr/bin/gpg",
       "gpg",
-        "--batch", 
+        "--batch",
         "--no-use-agent",
         "-o" "/dev/null",
         "--local-user", name.c_str(),
@@ -62,8 +65,9 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "[!] Error to fetch key" << std::endl;
   }
+  */
 
-  
+
 
 
   return 0;

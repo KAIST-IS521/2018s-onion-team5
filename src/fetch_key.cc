@@ -1,5 +1,5 @@
-#include "config.hh"
-#include "fetch_key.hh"
+#include "../common/config.h"
+#include "fetch_key.h"
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
