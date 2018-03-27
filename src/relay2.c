@@ -32,6 +32,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include "common.h"
+#include "pgp_crypto.h"
 
 /* Required by event.h. */
 #include <sys/time.h>
