@@ -1,5 +1,6 @@
 #include "common.h"
 #include <stdio.h>
+#include <stdlib.h>
 /* Returns the size of the file */
 int get_file_size(IN FILE *fp) {
   int size;
