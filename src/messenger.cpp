@@ -1,8 +1,9 @@
 #include "message.h"
 #include "messenger.h"
-//#include "pgp_crypto.h"
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
+#include "pgp_crypto.h"
 //#include <cstring>
 //Test
 #define FROM "moncadeau92@kasit.ac.kr"
@@ -67,8 +68,7 @@ void Messenger::Make_packet() { //string from, string to) {
 	std::string from, to; 		//delete later
 	Message * message_prev = message_enc.back();
 	from = FROM;            	//ID(address) of Sender
-	//to = "skc01012001@naver.com";	//IP(address) of receiver
-	char to1[] = "skc01012001@naver.com";
+	to = "skc01012001@naver.com";	//IP(address) of receiver
 	std::string MSG2 = message_prev->Make_array();  //MSG should be encrypted
 
 	std::vector<char> ch(MSG2.begin(), MSG2.end());
@@ -80,17 +80,13 @@ void Messenger::Make_packet() { //string from, string to) {
 	enc_prev_file << MSG;
 	enc_prev_file.close();
 	std::cout << to << std::endl;
-//test
-	Message * message = new Message(from, to, MSG, timestamp);
-	message_enc.push_back(message);
+	std::string MSG_enc;	
 
-
-//	int enc_check = pgp_enc("Enc.pub", to1, "Enc.pub");
-//	std::string MSG_enc;
-/*	if(enc_check == 0) {
+	int check_enc = pgp_enc("Enc.pub", to.c_str(), "Enc.pub");
+	std::cout << check_enc << std::endl;
+	if(check_enc == 0 ) {
 		std::ifstream enc_file;
 		enc_file.open("./Enc.pub");
-		std::string MSG_enc;
 		enc_file >> MSG_enc;
 		std::cout << "Encypt success!" << std::endl;
 		std::cout << MSG_enc << std::endl;
@@ -100,7 +96,7 @@ void Messenger::Make_packet() { //string from, string to) {
 	}
 	else
 		std::cout << "Encrpyt failed" << std::endl;
-*/
+
 
 }
 
@@ -131,6 +127,15 @@ int Messenger::Recv_packet(){  //std::string dec_msg) {
 		return -1;
 	}
 	std::string msg = MSG.substr(7 + from_len + to_len + Time_len);
+	std::vector<char> ch(msg.begin(), msg.end());
+	char * MSG_prev = &ch[0];
+
+	std::ofstream dec_prev_file;
+    dec_prev_file.open("./Dec.pub");
+    dec_prev_file << MSG_prev;
+    dec_prev_file.close();
+
+
 //check whether from ID is mine
 /*	if(from.compare(FROM) == 0) {
 	
