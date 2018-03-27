@@ -67,9 +67,12 @@ void Messenger::Make_packet() { //string from, string to) {
 	std::string from, to; 		//delete later
 	Message * message_prev = message_enc.back();
 	from = FROM;            	//ID(address) of Sender
-	to = "skc01012001@naver.com";	//IP(address) of receiver
+	//to = "skc01012001@naver.com";	//IP(address) of receiver
+	char to1[] = "skc01012001@naver.com";
+	std::string MSG2 = message_prev->Make_array();  //MSG should be encrypted
 
-	std::string MSG = message_prev->Make_array();  //MSG should be encrypted
+	std::vector<char> ch(MSG2.begin(), MSG2.end());
+	char * MSG = &ch[0];
 
 	//make file for encrypt
 	std::ofstream enc_prev_file;
@@ -82,7 +85,7 @@ void Messenger::Make_packet() { //string from, string to) {
 	message_enc.push_back(message);
 
 
-//	int enc_check = pgp_enc("Enc.pub", to, "Enc.pub");
+//	int enc_check = pgp_enc("Enc.pub", to1, "Enc.pub");
 //	std::string MSG_enc;
 /*	if(enc_check == 0) {
 		std::ifstream enc_file;
