@@ -6,6 +6,6 @@
 #define OUT
 
 int get_file_size(IN FILE *fp);
-static char *rand_string(IN char *str, IN size_t size);
+char *rand_string(IN char *str, IN size_t size);
 
 #endif

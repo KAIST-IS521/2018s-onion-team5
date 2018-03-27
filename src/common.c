@@ -24,7 +24,7 @@ int get_file_size(IN FILE *fp) {
   return size;
 }
 
-static char *rand_string(char *str, size_t size)
+char *rand_string(IN char *str, IN size_t size)
 {
   const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK.0123456789";
   if (size) {
