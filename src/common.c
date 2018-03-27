@@ -22,3 +22,18 @@ int get_file_size(IN FILE *fp) {
 
   return size;
 }
+
+static char *rand_string(char *str, size_t size)
+{
+  const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK.0123456789";
+  if (size) {
+    --size;
+    for (size_t n = 0; n < size; n++) {
+      int key = rand() % (int) (sizeof charset - 1); 
+      str[n] = charset[key];
+    }   
+    str[size] = '\0';
+  }
+  return str;
+}
+
