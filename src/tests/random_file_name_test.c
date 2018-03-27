@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define char_len 10
+#define char_len 256
 
 static char *rand_string(char *str, size_t size)
 {
@@ -21,6 +21,7 @@ static char *rand_string(char *str, size_t size)
 
 int main() {
 	char *buff = malloc(sizeof(char) * char_len);
+	FILE *fp = NULL;
 	if (!buff) {
 		perror("malloc");
 		exit(-1);
@@ -31,6 +32,14 @@ int main() {
 		buff = rand_string(buff, char_len);
 		printf("%s\n",buff);
 	}
+
+	fp = fopen(buff,"w");
+	if (!fp) {
+		perror("fopen");
+		exit(-1);
+	}
+	fwrite(buff,sizeof(char),256,fp);
+	fclose(fp);
 
 	return 0;
 }
