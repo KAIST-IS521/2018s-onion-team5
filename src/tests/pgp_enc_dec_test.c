@@ -50,7 +50,7 @@ void base_init() {
 	input_file_name_len = strlen(input_file_name);
 	output_file_name_len = strlen(output_file_name);
 
-	command = malloc(sizeof(char) * (input_file_name_len + output_file_name_len + 100));
+	command = (char *)malloc(sizeof(char) * (input_file_name_len + output_file_name_len + 100));
 	if (!command) {
 		perror("malloc");
 		exit(-1);

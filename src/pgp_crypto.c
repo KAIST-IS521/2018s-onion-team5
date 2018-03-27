@@ -16,14 +16,14 @@ int pgp_enc(char *input_file_name, char *recipient, char *output_file_name) {
 	input_file_name_len = strlen(input_file_name);
 	output_file_name_len = strlen(output_file_name);
 
-  char *buff = malloc(sizeof(char) * strlen("OK"));
+  char *buff = (char *)malloc(sizeof(char) * strlen("OK"));
   if (!buff) {
     perror("malloc");
     goto EXIT;
   }
   memset(buff, 0, sizeof(char) * strlen("OK"));
 
-  char *command = malloc(sizeof(char) * (input_file_name_len + recipient_len + output_file_name_len + 200));
+  char *command = (char *)malloc(sizeof(char) * (input_file_name_len + recipient_len + output_file_name_len + 200));
   if (!command) {
     perror("malloc");
     goto EXIT;
@@ -91,14 +91,14 @@ int pgp_dec(char *input_file_name, char *passphrase, char *output_file_name) {
 	input_file_name_len = strlen(input_file_name);
 	output_file_name_len = strlen(output_file_name);
   
-	char *buff = malloc(sizeof(char) * strlen("OK"));
+	char *buff = (char *)malloc(sizeof(char) * strlen("OK"));
   if (!buff) {
     perror("malloc");
     goto EXIT;
   }
   memset(buff, 0, sizeof(char) * strlen("OK"));
 
-  char *command = malloc(sizeof(char) * (input_file_name_len + passphrase_len + output_file_name_len + 200));
+  char *command = (char *)malloc(sizeof(char) * (input_file_name_len + passphrase_len + output_file_name_len + 200));
   if (!command) {
     perror("malloc");
     goto EXIT;
