@@ -24,12 +24,11 @@
   waitpid(pid, &status, NULL);\
 }
 
-#define GPG_RET_CHECK(CALLBACK) {\
+#define GPG_RET_CHECK(CB_SUCCESS, CB_FAIL) {\
   if (status == 0) {\
-    { CALLBACK; }\
-    return true;\
+    { CB_SUCCESS; }\
   } else if (status == 512) {\
-    return false;\
+    { CB_FAIL; }\
   } else {\
     puts("UNKNOWN STATUS CODE, EXIT");\
     exit(1);\
@@ -76,6 +75,9 @@ bool GPG::verify_passphrase(std::string name, std::string passphrase) {
   GPG_RET_CHECK({
     this->name = name;
     this->passphrase = passphrase;
+    return true;
+  }, {
+    return false;
   });
 }
 
@@ -98,5 +100,102 @@ bool GPG::add_public_key(std::string locate) {
   });
   printf("status %d\n", status);
 
-  GPG_RET_CHECK({});
+  GPG_RET_CHECK({
+    return true;
+  },{
+    return false;
+  });
+}
+
+bool GPG::encrypt_file(std::string input_locate, std::string recipient, std::string& output_locate) {
+  if (!this->is_authorized()) {
+    return false;
+  }
+
+  std::string temp_locate = save_tempfile("");
+
+  int status = 0;
+  FORK_AND_WAIT({
+    CLOSE_STDIO;
+    execlp(
+      "/usr/bin/gpg",
+      "gpg",
+        "-o", temp_locate,
+        "--encrypt",
+        "--armor",
+        "--yes",
+        "--recipient", recipient.c_str()
+        input_locate.c_str(),
+        0);
+    perror("execlp");
+  });
+  printf("status %d\n", status);
+
+  GPG_RET_CHECK({
+    output_locate = temp_locate;
+    return true;
+  },{
+    return false;
+  });
+}
+
+bool GPG::encrypt(std::string input, std::string recipient, std::string& output_locate) {
+
+  std::string input_locate = save_tempfile(input);
+  std::string temp_locate;
+  bool ret = this->encrypt_file(input_locate, recipient, temp_locate);
+
+  if (!delete_file(input_locate)) {
+    // file to delete
+    return false;
+  }
+
+  return ret;
+}
+
+bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::string& output_locate) {
+  if (!this->is_authorized()) {
+    return false;
+  }
+
+  std::string temp_locate = save_tempfile("");
+
+  int status = 0;
+  FORK_AND_WAIT({
+    CLOSE_STDIO;
+    execlp(
+      "/usr/bin/gpg",
+      "gpg",
+        "-o", temp_locate,
+        "--batch",
+        "--yes",
+        "--no-use-agent",
+        "--local-user", name.c_str(),
+        "--passphrase", passphrase.c_str(),
+        input_locate.c_str(),
+        0);
+    perror("execlp");
+  });
+  printf("status %d\n", status);
+
+  GPG_RET_CHECK({
+    output_locate = temp_locate;
+    return true;
+  },{
+    return false;
+  });
+}
+
+bool GPG::decrypt(std::string input, std::string recipient, std::string& output_locate) {
+
+  std::string input_locate = save_tempfile(input);
+  std::string temp_locate;
+  bool ret = this->encrypt_file(input_locate, recipient, temp_locate);
+
+  if (!delete_file(input_locate)) {
+    // fail to delete
+    return false;
+  }
+
+  return ret;
 }
