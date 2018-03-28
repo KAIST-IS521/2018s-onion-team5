@@ -9,6 +9,7 @@
 #include "../common/node.pb.h"
 #include "../common/sha1.hpp"
 #include "../common/dumphex.h"
+#include "../common/util.h"
 #include "rest_client.h"
 
 void health_server() {
@@ -81,18 +82,4 @@ void health_server() {
     sleep(3 * 60);
   }
   google::protobuf::ShutdownProtobufLibrary();
-}
-
-std::string random_string(size_t length) {
-    auto randchar = []() -> char {
-        const char charset[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length,0);
-    std::generate_n(str.begin(), length, randchar);
-    return str;
 }
