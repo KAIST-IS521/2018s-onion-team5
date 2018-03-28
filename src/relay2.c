@@ -51,22 +51,7 @@
 
 /* Port to listen on. */
 #define SERVER_PORT 5555
-
 #define char_len 5
-
-static char *rand_string(char *str, size_t size)
-{
-  const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK.0123456789";
-  if (size) {
-    --size;
-    for (size_t n = 0; n < size; n++) {
-      int key = rand() % (int) (sizeof charset - 1); 
-      str[n] = charset[key];
-    }   
-    str[size] = '\0';
-  }
-  return str;
-}
 
 /**
  * A struct for client specific data, also includes pointer to create
@@ -142,6 +127,7 @@ void
 buffered_on_error(struct bufferevent *bev, short what, void *arg)
 {
 	struct client *client = (struct client *)arg;
+	int ret = -1;
 
 	if (what & EVBUFFER_EOF) {
 		/* Client disconnected, remove the read event and the
@@ -154,6 +140,19 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 	bufferevent_free(client->buf_ev);
 	close(client->fd);
 	fclose(client->fp);
+
+	/*
+	client->fp = fopen(client->file_name, "rb");
+	if (!(client->fp))
+		perror("fopen");
+	*/
+	printf("f_name:%s\n",client->file_name);
+	ret = pgp_dec(client->file_name,"is521ghkdlxld","aaa");
+	printf("ret: %d, client_fd: %d\n",ret,client->fd);
+	if (ret == 0) {
+
+	}
+
 	free(client);
 }
 
@@ -191,6 +190,8 @@ on_accept(int fd, short ev, void *arg)
 	} while(access(client->file_name, F_OK) != -1);
 
 	client->fp = fopen(client->file_name,"wb");
+	if (!(client->fp))
+		perror("fopen");
 	
 	/* Create the buffered event.
 	 *
