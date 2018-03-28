@@ -1,4 +1,5 @@
 #include "../common/config.h"
+#include "../common/http_client.h"
 #include "fetch_key.h"
 
 int fetch_key_from_github(std::string user_id, std::string& str) {

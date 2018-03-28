@@ -69,10 +69,10 @@ void boradcast_listener() {
       exit(1);
     }
     buf[bufLen] = 0;
-    string buff(buf, bufLen);
+    std::string buff(buf, bufLen);
     if (buff.substr(0, 2).compare(BROADCAST_PREFIX) == 0) {
       //int size = buf[2];
-      int size = buf[2];
+      //int size = buf[2];
       int size = buff.size();
       if (buff.substr(size - 2, 2).compare(BROADCAST_POSTFIX) == 0) {
         github_id = buff.substr(3, size - 5);
