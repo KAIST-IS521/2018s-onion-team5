@@ -10,62 +10,49 @@
 
 #include "fetch_key.h"
 #include "listen.h"
-
-#define TEMPFILE "/tmp/fofofofoffff"
+#include "gpg_wrapper.h"
+#include "../common/util.h"
+#include "../common/dumphex.h"
 
 int main(int argc, char *argv[]) {
-  std::map<std::string, std::string> node_list;
-  listener("AhnMo", node_list);
+  GPG gpg;
 
   /*
-  std::string passphrase;
+  std::string name;
+  std::cout << "Put your private key id: ";
 
-  std::string name("TestTest");
+  std::getline(std::cin, name);
+
+  DumpHex(name);
 
   //char passphrase[PASS_MAX];
+  char *passphrase = NULL;
   passphrase = getpass("Put your passphrase: ");
 
-  pid_t pid;
-  int status = 0;
-
-  pid = fork();
-  if (pid < 0) { }
-  else if (pid == 0) {
-    int fd = open("/dev/null", O_RDWR);
-    dup2(fd, STDIN_FILENO);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
-    if (fd > 2) close(fd);
-
-    system("touch " TEMPFILE);
-    execlp(
-      "/usr/bin/gpg",
-      "gpg",
-        "--batch",
-        "--no-use-agent",
-        "-o" "/dev/null",
-        "--local-user", name.c_str(),
-        "--passphrase", passphrase.c_str(),
-        "-as",
-        TEMPFILE,
-        0);
-    // not reach
-    puts("error");
-    exit(1);
+  if (!gpg.verify_passphrase(name, passphrase)) {
+    std::cout << "Fail to verify passphrase" << std::endl;;
+    return 1;
   }
-  waitpid(pid, &status, NULL);
-  system("rm " TEMPFILE);
 
-  printf("status %d\n", status);
+  std::cout << "Loggined" << std::endl;
+  */
+  gpg.set_dummy_cred();
 
-  return 0;
+  std::map<std::string, std::string> node_list;
+  //listener("AhnMo", node_list);
+
   std::string ret;
-  if (fetch_key_from_github("AhnMo", ret) == 0) {
+  if (fetch_key_from_github("TestUser2", ret)) {
     std::cout << ret << std::endl;
   } else {
     std::cout << "[!] Error to fetch key" << std::endl;
+    return 1;
   }
-  */
+
+  std::string filename = save_tempfile(ret);
+
+  gpg.add_public_key(filename);
+
 
 
 
