@@ -139,18 +139,33 @@ bool GPG::encrypt_file(std::string input_locate, std::string recipient, std::str
   });
 }
 
-bool GPG::encrypt(std::string input, std::string recipient, std::string& output_locate) {
+bool GPG::encrypt(std::string input, std::string recipient, std::string& output) {
 
   std::string input_locate = save_tempfile(input);
   std::string temp_locate;
-  bool ret = this->encrypt_file(input_locate, recipient, temp_locate);
 
-  if (!delete_file(input_locate)) {
-    // file to delete
+  if (!this->encrypt_file(input_locate, recipient, temp_locate)) {
+    // fail to encrypt
     return false;
   }
 
-  return ret;
+  if (!delete_file(input_locate)) {
+    // fail to delete
+    return false;
+  }
+
+  std::string buff;
+  if (!read_file(temp_locate, buff)) {
+    // fail to read
+    return false;
+  }
+
+  if (!delete_file(temp_locate)) {
+    // fail to delete
+    return false;
+  }
+
+  return true;
 }
 
 bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::string& output_locate) {
@@ -186,16 +201,31 @@ bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::str
   });
 }
 
-bool GPG::decrypt(std::string input, std::string recipient, std::string& output_locate) {
+bool GPG::decrypt(std::string input, std::string recipient, std::string& output) {
 
   std::string input_locate = save_tempfile(input);
   std::string temp_locate;
-  bool ret = this->encrypt_file(input_locate, recipient, temp_locate);
+
+  if (!this->decrypt_file(input_locate, recipient, temp_locate)) {
+    // fail to decrypt
+    return false;
+  }
 
   if (!delete_file(input_locate)) {
     // fail to delete
     return false;
   }
 
-  return ret;
+  std::string buff;
+  if (!read_file(temp_locate, buff)) {
+    // fail to read
+    return false;
+  }
+
+  if (!delete_file(temp_locate)) {
+    // fail to delete
+    return false;
+  }
+
+  return true;
 }
