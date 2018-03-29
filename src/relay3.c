@@ -135,8 +135,12 @@ void
 buffered_on_error(struct bufferevent *bev, short what, void *arg)
 {
 	struct client *client = (struct client *)arg;
-	int ret = -1;
+	int ret = -1; // decrypt return 값
 	char temp_file_name[char_len];
+	int len = -1; //fread return 값
+	char header_buff[128] = {0,}; // 헤더 버퍼
+	int header_len_check = 2; //받은 파일의 시작이 0xdead(2바이트) 인지 확인
+	int total_header_len = 4; // ####임시####, 헤더 총 길이
 
 
 	if (what & EVBUFFER_EOF) {
@@ -164,9 +168,41 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 		ret = pgp_dec(client->file_name,"is521ghkdlxld",temp_file_name);
 		printf("ret: %d, client_fd: %d\n",ret,client->fd);
 		if (ret == 0) {
-			printf("decryption success\n");	
+			printf("decryption success\n");
+			client->fp = fopen(temp_file_name,"rb");
+			if (!(client->fp))
+				perror("fopen");
+			len = fread(header_buff, sizeof(char), header_len_check, client->fp);
+			if (len == 2) {
+				printf("read %dbyte from decrypted file\n",header_len_check);
+				if (header_buff[0] == 'a' && header_buff[1] == 'b') {
+					printf("it is our protocol message\n");
+					write(client->fd_ui)           asdfasdfasdfasdfafds
+					/*
+					fread..(이전에 fread했으므로 rewind 고려
+					if( destination is mine)
+						write(port 5556, 데이터 도착) 포맷: "홍길동"파일 도착. 파일 이름 Temp_file_name->"홍길동"으로 변경
+					if( destination is not mine)
+						connect(from에 쓰여진 노드와 커넥트)
+						write(from에 쓰여진 노드에게 전송)					
+					*/
+				}
+			}
+			if (len != 2) {
+				printf(" ret != %d in fread, after decrypt\n",header_len_check);
+				//어니언 프로토콜 데이터 아님. 파일 삭제
+			}
+		}
+		if (ret == -1) {
+			printf(" decryption failed\n");
+			//어니언 프로토콜 데이터 아님. 파일 삭제
 		}
 	}
+
+	if (client->ui == 1) {
+		printf("[UI] RECV complete\n");
+	}
+
 	free(client);
 }
 
@@ -197,8 +233,8 @@ on_accept(int fd, short ev, void *arg)
 	client = (struct client *)calloc(1, sizeof(*client));
 	if (client == NULL)
 		err(1, "malloc failed");
-	client->fd = client_fd;
 	client->ui = ui;
+	client->fd = client_fd;
 	if (ui == 0) {
 		do {
 			rand_string(client->file_name, char_len);
