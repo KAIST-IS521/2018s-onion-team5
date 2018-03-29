@@ -11,6 +11,8 @@ public:
   bool is_authorized();
   bool verify_passphrase(std::string name, std::string passphrase);
   bool add_public_key(std::string locate);
+  bool is_existed_key(std::string locate);
+  std::string get_keyid_by_github(std::string locate);
 
   bool encrypt_file(std::string input_locate, std::string recipient, std::string& output_locate);
   bool encrypt(std::string input, std::string recipient, std::string& output);
