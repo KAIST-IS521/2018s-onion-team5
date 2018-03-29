@@ -21,9 +21,14 @@ int get_file_size(std::string locate) {
   return buf.st_size;
 }
 
-std::string save_tempfile(std::string content) {
+std::string get_temppath() {
   std::string path("/tmp/");
   path += random_string(16);
+  return path;
+}
+
+std::string save_tempfile(std::string content) {
+  std::string path = get_temppath();
 
   if (write_file(path, content)) {
     return path;
@@ -106,6 +111,7 @@ std::string random_string(size_t length) {
     }
     close(fd);
     srand(seed);
+    rand_initialized = true;
   }
   auto randchar = []() -> char {
     const char charset[] =
