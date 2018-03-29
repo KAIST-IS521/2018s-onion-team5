@@ -8,7 +8,7 @@ int main() {
 	int operate;
 	
 	Messenger messenger1;
-
+	system("clear");
 	while(messenger1.Main() != 0) {
 	}
 

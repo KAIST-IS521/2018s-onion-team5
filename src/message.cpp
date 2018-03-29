@@ -33,8 +33,8 @@ std::string Message::Make_array() {
 void Message::Show_msg() {
 
 	std::cout << "---------------Original Message---------------"<<std::endl;
-	std::cout << "From : " << from_ID << std::endl;
-	std::cout << "To : " << to_ID << std::endl;
+//	std::cout << "From : " << from_ID << std::endl;
+//	std::cout << "To : " << to_ID << std::endl;
 	std::cout << "Time : " << Time << std::endl;
 
 	std::cout << msg << std::endl << std::endl;
