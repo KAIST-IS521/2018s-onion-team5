@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <map>
 #include <string>
-
+#include <vector>
 
 #include "fetch_key.h"
 #include "listen.h"
@@ -16,9 +16,9 @@
 #include "message_wrapper.h"
 
 int main(int argc, char *argv[]) {
-  GPG gpg;
-
   /*
+
+  GPG gpg;
   std::string name;
   std::cout << "Put your private key id: ";
 
@@ -110,6 +110,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Fail to delete" << std::endl;
   }
   */
+
+  /*
   {
     Message m;
     m.setFrom("AhnMo");
@@ -166,6 +168,69 @@ int main(int argc, char *argv[]) {
 
     delete_file(filename);
   }
+
+  */
+
+  GPG gpg;
+
+  gpg.verify_passphrase("TestUser2", "xptmxmdl");
+
+  std::string from;
+  from = "TestUser2";
+
+  std::string to;
+  to = "TestUser5";
+
+  std::vector<std::string> route;
+
+  route.push_back(from); // humm,
+
+  route.push_back("TestUser1");
+  route.push_back("TestUser3");
+  route.push_back("TestUser4");
+
+  std::string filename;
+  {
+    Message m;
+    m.setFrom(from);
+    m.setTo(to);
+    m.setContent("HELL oWorld!");
+
+    filename = m.serialize();
+  }
+
+  std::string from2;
+  std::string to2;
+  std::string filename2;
+  Message m2;
+
+  //route.push_front(from);
+  from2 = to; // TestUser5
+
+  int size = route.size();
+  for (int i = 0; i < size; ++i){
+    to2 = from2;
+    from2 = route.back();
+    route.pop_back();
+
+#if 1
+    gpg.encrypt_file(filename, to2, filename2);
+#else
+    filename2 = filename;
+#endif
+    m2.setFrom(from2);
+    m2.setTo(to2);
+    m2.setBinary(filename2);
+    filename = m2.serialize();
+    m2.clear();
+  }
+
+  std::string x = "xxd " + filename;
+  system(x.c_str());
+
+  x = "rm /tmp/????????????????";
+  system(x.c_str());
+
 
 
   return 0;
