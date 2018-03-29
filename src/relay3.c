@@ -60,6 +60,7 @@
 struct client {
 	/* The clients socket. */
 	int fd;
+	int fd_ui;
 	FILE *fp;
 	int ui;
 	char file_name[char_len];
@@ -98,9 +99,9 @@ buffered_on_read(struct bufferevent *bev, void *arg)
 }
 
 void
-buffered_on_read_temp(struct bufferevent *bev, void *arg)
+buffered_on_read_ui(struct bufferevent *bev, void *arg)
 {
-	printf("buffered_on_read_temp\n");
+	printf("buffered_on_read_ui\n");
 }
 
 void
@@ -125,6 +126,30 @@ void
 buffered_on_write(struct bufferevent *bev, void *arg)
 {
 	printf("buffered_on_write\n");
+}
+
+void
+buffered_on_write_ui(struct bufferevent *bev, void *arg)
+{
+	printf("buffered_on_write_ui\n");
+}
+
+void
+buffered_on_error_ui(struct bufferevent *bev, short what, void *arg)
+{
+  struct client *client = (struct client *)arg;
+
+  if (what & EVBUFFER_EOF) {
+    /* Client disconnected, remove the read event and the
+     * free the client structure. */
+    printf("Client disconnected.\n");
+  }
+  else {
+    warn("Client socket error, disconnecting.\n");
+  }
+  bufferevent_free(client->buf_ev);
+  close(client->fd_ui);
+  free(client);
 }
 
 /**
@@ -177,7 +202,7 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 				printf("read %dbyte from decrypted file\n",header_len_check);
 				if (header_buff[0] == 'a' && header_buff[1] == 'b') {
 					printf("it is our protocol message\n");
-					write(client->fd_ui)           asdfasdfasdfasdfafds
+					//write(client->fd_ui)           asdfasdfasdfasdfafds
 					/*
 					fread..(이전에 fread했으므로 rewind 고려
 					if( destination is mine)
@@ -217,7 +242,8 @@ on_accept(int fd, short ev, void *arg)
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	struct client *client;
-	int ui = *((int *)arg);
+	struct client *arg_client = (struct client *)arg;
+	client->ui = arg_client->ui; //수정 필요
 
 	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0) {
@@ -233,9 +259,9 @@ on_accept(int fd, short ev, void *arg)
 	client = (struct client *)calloc(1, sizeof(*client));
 	if (client == NULL)
 		err(1, "malloc failed");
-	client->ui = ui;
+	client->ui = arg_client->ui;
 	client->fd = client_fd;
-	if (ui == 0) {
+	if (client->ui == 0) {
 		do {
 			rand_string(client->file_name, char_len);
 			printf("f_name: %s\n",client->file_name);
@@ -279,8 +305,8 @@ on_accept(int fd, short ev, void *arg)
 				inet_ntoa(client_addr.sin_addr));
 	}
 
-	if (ui == 1) {		
-		client->buf_ev = bufferevent_new(client_fd, buffered_on_read_temp,
+	if (client->ui == 1) {		
+		client->buf_ev = bufferevent_new(client_fd, buffered_on_read,
 				buffered_on_write, buffered_on_error, client);
 
 		/* We have to enable it before our callbacks will be
@@ -300,7 +326,10 @@ void relay()
 	int reuseaddr_on, reuseaddr_on2;
 	int connect_from_UI = 1;
 	int connect_from_others = 0;
-	
+	socklen_t client_len2;
+	struct client *client;
+	struct client *client_relay;
+
 	srand(time(NULL));
 
 	/* Initialize libevent. */
@@ -316,7 +345,7 @@ void relay()
 	listen_fd2 = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd2 < 0)
 		err(1, "listen2 failed");
-	memset(&listen_addr, 0, sizeof(listen_addr));
+	memset(&listen_addr2, 0, sizeof(listen_addr2));
 
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_addr.s_addr = INADDR_ANY;
@@ -325,6 +354,7 @@ void relay()
 	listen_addr2.sin_family = AF_INET;
 	listen_addr2.sin_addr.s_addr = INADDR_ANY;
 	listen_addr2.sin_port = htons(SERVER_PORT2);
+	client_len2 = sizeof(listen_addr2);
 
 	//1
 	if (bind(listen_fd, (struct sockaddr *)&listen_addr,
@@ -342,6 +372,14 @@ void relay()
 		err(1, "failed to set server socket to non-blocking");
 	
 	//2
+	client = (struct client *)calloc(1, sizeof(*client));
+	if (client == NULL)
+		err(1, "malloc failed");
+	
+	client_relay = (struct client *)calloc(1, sizeof(*client_relay));
+	if (client_relay == NULL)
+		err(1, "malloc failed");
+
 	if (bind(listen_fd2, (struct sockaddr *)&listen_addr2,
 		sizeof(listen_addr2)) < 0)
 		err(1, "bind2 failed");
@@ -350,19 +388,28 @@ void relay()
 	reuseaddr_on2 = 1;
 	setsockopt(listen_fd2, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on2, 
 	    sizeof(reuseaddr_on2));
+	
+	client->fd_ui = accept(listen_fd2, (struct sockaddr *)&listen_addr2, &client_len2);
+	client_relay->fd_ui = client->fd_ui;
 
 	/* Set the socket to non-blocking, this is essential in event
 	 * based programming with libevent. */
-	if (setnonblock(listen_fd2) < 0)
-		err(1, "failed to set server socket to non-blocking22222");
+	if (setnonblock(client->fd_ui) < 0)
+		err(1, "failed to set server socket to non-blocking22222222222222");
+
+	client->buf_ev = bufferevent_new(client->fd_ui, buffered_on_read_ui,
+			buffered_on_write_ui, buffered_on_error_ui, client);
+
+	/* We have to enable it before our callbacks will be
+	 * called. */
+	bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
+
+	printf("Accepted connection from [UI] %s\n", inet_ntoa(listen_addr2.sin_addr));
 
 	/* We now have a listening socket, we create a read event to
 	 * be notified when a client connects. */
-	event_set(&ev_accept, listen_fd, EV_READ|EV_PERSIST, on_accept, &connect_from_others);
+	event_set(&ev_accept, listen_fd, EV_READ|EV_PERSIST, on_accept, client_relay);
 	event_add(&ev_accept, NULL);
-
-	event_set(&ev_accept2, listen_fd2, EV_READ, on_accept, &connect_from_UI);
-	event_add(&ev_accept2, NULL);
 
 	/* Start the event loop. */
 	event_dispatch();
