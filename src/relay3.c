@@ -50,6 +50,7 @@
 
 /* Port to listen on. */
 #define SERVER_PORT 5555
+#define SERVER_PORT2 5556
 #define char_len 5
 
 /**
@@ -60,6 +61,7 @@ struct client {
 	/* The clients socket. */
 	int fd;
 	FILE *fp;
+	int ui;
 	char file_name[char_len];
 	/* The bufferedevent for this client. */
 	struct bufferevent *buf_ev;
@@ -96,6 +98,12 @@ buffered_on_read(struct bufferevent *bev, void *arg)
 }
 
 void
+buffered_on_read_temp(struct bufferevent *bev, void *arg)
+{
+	printf("buffered_on_read_temp\n");
+}
+
+void
 buffered_on_read_hj(struct bufferevent *bev, void *arg)
 {
 	struct client *client = (struct client *)arg;
@@ -116,6 +124,7 @@ buffered_on_read_hj(struct bufferevent *bev, void *arg)
 void
 buffered_on_write(struct bufferevent *bev, void *arg)
 {
+	printf("buffered_on_write\n");
 }
 
 /**
@@ -127,6 +136,8 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 {
 	struct client *client = (struct client *)arg;
 	int ret = -1;
+	char temp_file_name[char_len];
+
 
 	if (what & EVBUFFER_EOF) {
 		/* Client disconnected, remove the read event and the
@@ -138,20 +149,24 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 	}
 	bufferevent_free(client->buf_ev);
 	close(client->fd);
-	fclose(client->fp);
-
-	/*
-	client->fp = fopen(client->file_name, "rb");
-	if (!(client->fp))
-		perror("fopen");
-	*/
-	printf("f_name:%s\n",client->file_name);
-	ret = pgp_dec(client->file_name,"is521ghkdlxld","aaa");
-	printf("ret: %d, client_fd: %d\n",ret,client->fd);
-	if (ret == 0) {
-
+	if (client->fp) {
+		printf("client->ui:%d\n",client->ui);
+		fclose(client->fp);
 	}
 
+	if (client->ui == 0) {
+		printf("f_name:%s\n",client->file_name);
+		do {
+			rand_string(temp_file_name, char_len);
+			printf("temp_f_name: %s\n", temp_file_name);
+		} while(access(temp_file_name, F_OK) != -1);
+
+		ret = pgp_dec(client->file_name,"is521ghkdlxld",temp_file_name);
+		printf("ret: %d, client_fd: %d\n",ret,client->fd);
+		if (ret == 0) {
+			printf("decryption success\n");	
+		}
+	}
 	free(client);
 }
 
@@ -166,6 +181,7 @@ on_accept(int fd, short ev, void *arg)
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	struct client *client;
+	int ui = *((int *)arg);
 
 	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0) {
@@ -182,70 +198,99 @@ on_accept(int fd, short ev, void *arg)
 	if (client == NULL)
 		err(1, "malloc failed");
 	client->fd = client_fd;
+	client->ui = ui;
+	if (ui == 0) {
+		do {
+			rand_string(client->file_name, char_len);
+			printf("f_name: %s\n",client->file_name);
+		} while(access(client->file_name, F_OK) != -1);
 
-	do {
-		rand_string(client->file_name, char_len);
-		printf("f_name: %s\n",client->file_name);
-	} while(access(client->file_name, F_OK) != -1);
+		client->fp = fopen(client->file_name,"wb");
+		if (!(client->fp))
+			perror("fopen");
+		
+		/* Create the buffered event.
+		 *
+		 * The first argument is the file descriptor that will trigger
+		 * the events, in this case the clients socket.
+		 *
+		 * The second argument is the callback that will be called
+		 * when data has been read from the socket and is available to
+		 * the application.
+		 *
+		 * The third argument is a callback to a function that will be
+		 * called when the write buffer has reached a low watermark.
+		 * That usually means that when the write buffer is 0 length,
+		 * this callback will be called.  It must be defined, but you
+		 * don't actually have to do anything in this callback.
+		 *
+		 * The fourth argument is a callback that will be called when
+		 * there is a socket error.  This is where you will detect
+		 * that the client disconnected or other socket errors.
+		 *
+		 * The fifth and final argument is to store an argument in
+		 * that will be passed to the callbacks.  We store the client
+		 * object here.
+		 */
+		client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
+				buffered_on_write, buffered_on_error, client);
 
-	client->fp = fopen(client->file_name,"wb");
-	if (!(client->fp))
-		perror("fopen");
-	
-	/* Create the buffered event.
-	 *
-	 * The first argument is the file descriptor that will trigger
-	 * the events, in this case the clients socket.
-	 *
-	 * The second argument is the callback that will be called
-	 * when data has been read from the socket and is available to
-	 * the application.
-	 *
-	 * The third argument is a callback to a function that will be
-	 * called when the write buffer has reached a low watermark.
-	 * That usually means that when the write buffer is 0 length,
-	 * this callback will be called.  It must be defined, but you
-	 * don't actually have to do anything in this callback.
-	 *
-	 * The fourth argument is a callback that will be called when
-	 * there is a socket error.  This is where you will detect
-	 * that the client disconnected or other socket errors.
-	 *
-	 * The fifth and final argument is to store an argument in
-	 * that will be passed to the callbacks.  We store the client
-	 * object here.
-	 */
-	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
-	    buffered_on_write, buffered_on_error, client);
+		/* We have to enable it before our callbacks will be
+		 * called. */
+		bufferevent_enable(client->buf_ev, EV_READ);
 
-	/* We have to enable it before our callbacks will be
-	 * called. */
-	bufferevent_enable(client->buf_ev, EV_READ);
+		printf("Accepted connection from %s\n", 
+				inet_ntoa(client_addr.sin_addr));
+	}
 
-	printf("Accepted connection from %s\n", 
-	    inet_ntoa(client_addr.sin_addr));
+	if (ui == 1) {		
+		client->buf_ev = bufferevent_new(client_fd, buffered_on_read_temp,
+				buffered_on_write, buffered_on_error, client);
+
+		/* We have to enable it before our callbacks will be
+		 * called. */
+		bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
+
+		printf("Accepted connection from [UI] %s\n", 
+				inet_ntoa(client_addr.sin_addr));
+	}
 }
 
 void relay()
 {
-	int listen_fd;
-	struct sockaddr_in listen_addr;
-	struct event ev_accept;
-	int reuseaddr_on;
+	int listen_fd, listen_fd2;
+	struct sockaddr_in listen_addr, listen_addr2;
+	struct event ev_accept, ev_accept2;
+	int reuseaddr_on, reuseaddr_on2;
+	int connect_from_UI = 1;
+	int connect_from_others = 0;
 	
 	srand(time(NULL));
 
 	/* Initialize libevent. */
 	event_init();
 
-	/* Create our listening socket. */
+	/* Create our listening socket1. */
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd < 0)
 		err(1, "listen failed");
 	memset(&listen_addr, 0, sizeof(listen_addr));
+
+	/* Create our listening socket2. */
+	listen_fd2 = socket(AF_INET, SOCK_STREAM, 0);
+	if (listen_fd2 < 0)
+		err(1, "listen2 failed");
+	memset(&listen_addr, 0, sizeof(listen_addr));
+
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_addr.s_addr = INADDR_ANY;
 	listen_addr.sin_port = htons(SERVER_PORT);
+	
+	listen_addr2.sin_family = AF_INET;
+	listen_addr2.sin_addr.s_addr = INADDR_ANY;
+	listen_addr2.sin_port = htons(SERVER_PORT2);
+
+	//1
 	if (bind(listen_fd, (struct sockaddr *)&listen_addr,
 		sizeof(listen_addr)) < 0)
 		err(1, "bind failed");
@@ -259,11 +304,29 @@ void relay()
 	 * based programming with libevent. */
 	if (setnonblock(listen_fd) < 0)
 		err(1, "failed to set server socket to non-blocking");
+	
+	//2
+	if (bind(listen_fd2, (struct sockaddr *)&listen_addr2,
+		sizeof(listen_addr2)) < 0)
+		err(1, "bind2 failed");
+	if (listen(listen_fd2, 5) < 0)
+		err(1, "listen2 failed");
+	reuseaddr_on2 = 1;
+	setsockopt(listen_fd2, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on2, 
+	    sizeof(reuseaddr_on2));
+
+	/* Set the socket to non-blocking, this is essential in event
+	 * based programming with libevent. */
+	if (setnonblock(listen_fd2) < 0)
+		err(1, "failed to set server socket to non-blocking22222");
 
 	/* We now have a listening socket, we create a read event to
 	 * be notified when a client connects. */
-	event_set(&ev_accept, listen_fd, EV_READ|EV_PERSIST, on_accept, NULL);
+	event_set(&ev_accept, listen_fd, EV_READ|EV_PERSIST, on_accept, &connect_from_others);
 	event_add(&ev_accept, NULL);
+
+	event_set(&ev_accept2, listen_fd2, EV_READ, on_accept, &connect_from_UI);
+	event_add(&ev_accept2, NULL);
 
 	/* Start the event loop. */
 	event_dispatch();
