@@ -18,3 +18,6 @@ extern const int REST_SERV_PORT;
 
 #define PONG_PREFIX  "\xFE\xED"
 #define PONG_POSTFIX "\xF0\xDD"
+
+#define MESSAGE_PREFIX  "\xDE\xAD"
+#define MESSAGE_POSTFIX "\xF0\x0D"

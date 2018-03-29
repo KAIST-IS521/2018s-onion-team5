@@ -13,6 +13,7 @@
 #include "gpg_wrapper.h"
 #include "../common/util.h"
 #include "../common/dumphex.h"
+#include "message_wrapper.h"
 
 int main(int argc, char *argv[]) {
   GPG gpg;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Loggined" << std::endl;
   */
+  /*
   gpg.set_dummy_cred();
 
   std::map<std::string, std::string> node_list;
@@ -107,6 +109,64 @@ int main(int argc, char *argv[]) {
   if (!delete_file(tempfile)) {
     std::cout << "Fail to delete" << std::endl;
   }
+  */
+  {
+    Message m;
+    m.setFrom("AhnMo");
+    m.setTo("S-KYUCHAN");
+    m.setContent("this is test message");
+
+    std::string filename = m.serialize();
+    std::string temp;
+    temp = "xxd " + filename;
+    system(temp.c_str());
+
+    {
+      Message m2;
+      m2.deserialize(filename);
+    }
+
+    delete_file(filename);
+  }
+
+  {
+    Message m;
+    m.setFrom("AhnMo");
+    m.setTo("S-KYUCHAN");
+    m.setBinary("test.txt");
+
+    std::string filename = m.serialize();
+    std::string temp;
+    temp = "xxd " + filename;
+    system(temp.c_str());
+
+    {
+      Message m2;
+      m2.deserialize(filename);
+    }
+
+    delete_file(filename);
+  }
+
+  {
+    Message m;
+    m.setFrom("AhnMo");
+    m.setTo("S-KYUCHAN");
+    m.setFile("/home/ahnmo/Git/2018s-onion-team5/test.txt");
+
+    std::string filename = m.serialize();
+    std::string temp;
+    temp = "xxd " + filename;
+    system(temp.c_str());
+
+    {
+      Message m2;
+      m2.deserialize(filename);
+    }
+
+    delete_file(filename);
+  }
+
 
   return 0;
 }
