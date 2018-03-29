@@ -16,6 +16,6 @@ public:
 
   bool encrypt_file(std::string input_locate, std::string recipient, std::string& output_locate);
   bool encrypt(std::string input, std::string recipient, std::string& output);
-  bool decrypt_file(std::string input_locate, std::string recipient, std::string& output_locate);
-  bool decrypt(std::string input, std::string recipient, std::string& output);
+  bool decrypt_file(std::string input_locate, std::string& output_locate);
+  bool decrypt(std::string input, std::string& output);
 };

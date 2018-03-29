@@ -170,10 +170,7 @@ int main(int argc, char *argv[]) {
   }
 
   */
-
-  GPG gpg;
-
-  gpg.verify_passphrase("TestUser2", "xptmxmdl");
+  std::string filename;
 
   std::string from;
   from = "TestUser2";
@@ -181,53 +178,132 @@ int main(int argc, char *argv[]) {
   std::string to;
   to = "TestUser5";
 
-  std::vector<std::string> route;
-
-  route.push_back(from); // humm,
-
-  route.push_back("TestUser1");
-  route.push_back("TestUser3");
-  route.push_back("TestUser4");
-
-  std::string filename;
   {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser2", "xptmxmdl");
+
+    std::vector<std::string> route;
+
+    route.push_back(from); // humm,
+
+    route.push_back("TestUser1");
+    route.push_back("TestUser3");
+    route.push_back("TestUser4");
+
+    {
+      Message m;
+      m.setFrom(from);
+      m.setTo(to);
+      m.setContent("HELL oWorld!");
+
+      filename = m.serialize();
+    }
+
+    std::string from2;
+    std::string to2;
+    std::string filename2;
+    Message m2;
+
+    //route.push_front(from);
+    from2 = to; // TestUser5
+
+    int size = route.size();
+    for (int i = 0; i < size; ++i){
+      to2 = from2;
+      from2 = route.back();
+      route.pop_back();
+
+  #if 1
+      gpg.encrypt_file(filename, to2, filename2);
+  #else
+      filename2 = filename;
+  #endif
+      m2.setFrom(from2);
+      m2.setTo(to2);
+      m2.setBinary(filename2);
+      filename = m2.serialize();
+      m2.clear();
+    }
+
+    std::string x = "xxd " + filename;
+    system(x.c_str());
+  }
+
+  if (false) {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
+
     Message m;
-    m.setFrom(from);
-    m.setTo(to);
-    m.setContent("HELL oWorld!");
+    if (!m.deserialize(filename)) {
+      std::cout << "Fail to deserialize" << std::endl;
+      goto END_RELAY;
+    }
 
-    filename = m.serialize();
+    //(from.compare(m.getFrom()) == 0);
+    if (to.compare(m.getTo()) == 0 && m.getType() != 0) {
+      std::cout << "Oh, it's for me??" << std::endl;
+    }
+
+
+    END_RELAY:
+    ;
   }
 
-  std::string from2;
-  std::string to2;
-  std::string filename2;
-  Message m2;
+  {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
 
-  //route.push_front(from);
-  from2 = to; // TestUser5
+    Message m;
+    if (!m.deserialize(filename)) { }
 
-  int size = route.size();
-  for (int i = 0; i < size; ++i){
-    to2 = from2;
-    from2 = route.back();
-    route.pop_back();
-
-#if 1
-    gpg.encrypt_file(filename, to2, filename2);
-#else
-    filename2 = filename;
-#endif
-    m2.setFrom(from2);
-    m2.setTo(to2);
-    m2.setBinary(filename2);
-    filename = m2.serialize();
-    m2.clear();
+    std::string output;
+    gpg.decrypt_file(m.getContent(), output);
+    // 내용 체크 스킵
+    filename = output;
   }
 
-  std::string x = "xxd " + filename;
-  system(x.c_str());
+  {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser3", "xptmxmtka");
 
+    Message m;
+    if (!m.deserialize(filename)) { }
+
+    std::string output;
+    gpg.decrypt_file(m.getContent(), output);
+    // 내용 체크 스킵
+    filename = output;
+  }
+
+  {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser4", "xptmxmtk");
+
+    Message m;
+    if (!m.deserialize(filename)) { }
+
+    std::string output;
+    gpg.decrypt_file(m.getContent(), output);
+    // 내용 체크 스킵
+    filename = output;
+  }
+
+  {
+    GPG gpg;
+    gpg.verify_passphrase("TestUser5", "xptmxmdh");
+
+    Message m;
+    if (!m.deserialize(filename)) { }
+
+    std::string output;
+    gpg.decrypt_file(m.getContent(), output);
+    m.clear();
+
+    if (!m.deserialize(output)) { }
+    std::cout << m.getContent() << std::endl;
+  }
+
+  std::string x;
   x = "rm /tmp/????????????????";
   system(x.c_str());
 

@@ -184,7 +184,7 @@ bool GPG::encrypt(std::string input, std::string recipient, std::string& output)
   return true;
 }
 
-bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::string& output_locate) {
+bool GPG::decrypt_file(std::string input_locate, std::string& output_locate) {
   if (!this->is_authorized()) {
     return false;
   }
@@ -217,12 +217,12 @@ bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::str
   });
 }
 
-bool GPG::decrypt(std::string input, std::string recipient, std::string& output) {
+bool GPG::decrypt(std::string input, std::string& output) {
   bool flag = false;
   std::string input_locate = save_tempfile(input);
   std::string temp_locate;
 
-  if (!this->decrypt_file(input_locate, recipient, temp_locate)) {
+  if (!this->decrypt_file(input_locate, temp_locate)) {
     // fail to decrypt
     flag = true;
     //return false;
