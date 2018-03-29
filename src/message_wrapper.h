@@ -26,7 +26,10 @@ public:
 
   void setFrom(std::string from);
   void setTo(std::string to);
-
+  
+  std::string getFrom();
+  std::string getTo();
+  std::string getContent();
   int getType();
   void setBinary(std::string locate);
   void setContent(std::string content);
