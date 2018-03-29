@@ -53,9 +53,60 @@ int main(int argc, char *argv[]) {
 
   gpg.add_public_key(filename);
 
+  if (!delete_file(filename)) {
+    std::cout << "Fail to delete" << std::endl;;
+  }
 
 
+  std::string tempfile = save_tempfile("test input");
+  std::string outputfile;
+  std::cout << "tempfile: " << tempfile << std::endl;
 
+  std::cout << "===========================================" << std::endl;
+  std::cout << "gpg.encrypt_file(tempfile, \"TestUser6\", outputfile)" << std::endl;
+  if (!gpg.encrypt_file(tempfile, "TestUser6", outputfile)) {
+    std::cout << "Encrypt file fail..." << std::endl;
+  }
+  std::cout << outputfile << std::endl;
+
+  std::cout << "===========================================" << std::endl;
+  std::cout << "gpg.encrypt_file(tempfile, \"TestUser3\", outputfile)" << std::endl;
+  if (!gpg.encrypt_file(tempfile, "TestUser3", outputfile)) {
+    std::cout << "Encrypt file fail..." << std::endl;
+  }
+  std::cout << outputfile << std::endl;
+
+  std::string output;
+  output = "ls -al " + outputfile + "; xxd " + outputfile;
+
+  system(output.c_str());
+
+  if (!delete_file(outputfile)) {
+    std::cout << "Fail to delete" << std::endl;;
+  }
+
+  output.clear();
+
+  std::cout << "===========================================" << std::endl;
+  std::cout << "gpg.encrypt(\"Hello World!\", \"TestUser6\", output)" << std::endl;
+  if (!gpg.encrypt("Hello World!", "TestUser6", output)) {
+    std::cout << "Encrypt file fail..." << std::endl;
+  }
+  std::cout << output << std::endl;
+
+  std::cout << "===========================================" << std::endl;
+  std::cout << "gpg.encrypt(\"Hello World!\", \"TestUser3\", output)" << std::endl;
+  if (!gpg.encrypt("Hello World!", "TestUser3", output)) {
+    std::cout << "Encrypt file fail..." << std::endl;
+  }
+  //std::cout << output << std::endl;
+  DumpHex(output);
+
+  std::cout << "===========================================" << std::endl;
+  std::cout << "Delete tempfile!" << std::endl;;
+  if (!delete_file(tempfile)) {
+    std::cout << "Fail to delete" << std::endl;
+  }
 
   return 0;
 }

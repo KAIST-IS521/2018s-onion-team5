@@ -4,6 +4,10 @@
 #include <fstream>
 #include <cstdio>
 #include <algorithm>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 
 int get_file_size(std::string locate) {
@@ -33,7 +37,7 @@ bool write_file(std::string locate, std::string data) {
   bool ret;
 
   std::ofstream os;
-  os.open(path, std::ofstream::binary);
+  os.open(locate, std::ofstream::binary);
   os.write(data.c_str(), data.size());
 
   ret = true;
@@ -46,14 +50,16 @@ END_WRITE_FILE:
 // http://www.cplusplus.com/reference/istream/istream/read/
 bool read_file(std::string locate, std::string& data) {
   bool ret = false;
+  int length = -1;
+  char *buffer = NULL;
+
   std::ifstream is;
-  is.open(path, std::ifstream::binary);
+  is.open(locate, std::ifstream::binary);
   if (!is) {
     // fail to open
     goto END_READ_FILE;
   }
 
-  int length = -1;
 #if 0
   length = get_file_size(locate.c_str());
 #else
@@ -62,7 +68,6 @@ bool read_file(std::string locate, std::string& data) {
   is.seekg (0, is.beg);
 #endif
 
-  char *buffer = NULL;
   buffer = new char[length];
 
   is.read(buffer,length);
@@ -91,17 +96,26 @@ bool delete_file(std::string locate) {
   }
 }
 
-
+bool rand_initialized = false;
 std::string random_string(size_t length) {
-    auto randchar = []() -> char {
-        const char charset[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length,0);
-    std::generate_n(str.begin(), length, randchar);
-    return str;
+  if (!rand_initialized) {
+    int fd = open("/dev/urandom", O_RDONLY);
+    unsigned int seed;
+    if (read(fd, &seed, sizeof(unsigned int)) != sizeof(unsigned int)) {
+      // error read
+    }
+    close(fd);
+    srand(seed);
+  }
+  auto randchar = []() -> char {
+    const char charset[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+    const size_t max_index = (sizeof(charset) - 1);
+    return charset[ rand() % max_index ];
+  };
+  std::string str(length,0);
+  std::generate_n(str.begin(), length, randchar);
+  return str;
 }

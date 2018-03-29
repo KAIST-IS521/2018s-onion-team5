@@ -21,7 +21,7 @@
     { TASK }; \
     exit(1);\
   }\
-  waitpid(pid, &status, NULL);\
+  waitpid(pid, &status, 0);\
 }
 
 #define GPG_RET_CHECK(CB_SUCCESS, CB_FAIL) {\
@@ -120,11 +120,11 @@ bool GPG::encrypt_file(std::string input_locate, std::string recipient, std::str
     execlp(
       "/usr/bin/gpg",
       "gpg",
-        "-o", temp_locate,
+        "-o", temp_locate.c_str(),
         "--encrypt",
-        "--armor",
+        //"--armor",
         "--yes",
-        "--recipient", recipient.c_str()
+        "--recipient", recipient.c_str(),
         input_locate.c_str(),
         0);
     perror("execlp");
@@ -135,36 +135,52 @@ bool GPG::encrypt_file(std::string input_locate, std::string recipient, std::str
     output_locate = temp_locate;
     return true;
   },{
+    if (!delete_file(temp_locate)) {
+      // file deletion fail...
+    }
     return false;
   });
 }
 
 bool GPG::encrypt(std::string input, std::string recipient, std::string& output) {
+  bool flag = false;
 
+  // create file that has input string
   std::string input_locate = save_tempfile(input);
-  std::string temp_locate;
+  std::string output_locate;
 
-  if (!this->encrypt_file(input_locate, recipient, temp_locate)) {
+  // encrypt and get path
+  if (!this->encrypt_file(input_locate, recipient, output_locate)) {
     // fail to encrypt
-    return false;
+    flag = true;
+    //return false;
   }
-
   if (!delete_file(input_locate)) {
     // fail to delete
     return false;
   }
-
-  std::string buff;
-  if (!read_file(temp_locate, buff)) {
-    // fail to read
+  if (flag) {
+    // if encryption failed
     return false;
   }
 
-  if (!delete_file(temp_locate)) {
+  // read from result file
+  std::string buff;
+  if (!read_file(output_locate, buff)) {
+    // fail to read
+    flag = true;
+    //return false;
+  }
+  // delete result file
+  if (!delete_file(output_locate)) {
     // fail to delete
     return false;
   }
-
+  if (flag) {
+    // when read failed
+    return false;
+  }
+  output = buff;
   return true;
 }
 
@@ -181,7 +197,7 @@ bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::str
     execlp(
       "/usr/bin/gpg",
       "gpg",
-        "-o", temp_locate,
+        "-o", temp_locate.c_str(),
         "--batch",
         "--yes",
         "--no-use-agent",
@@ -202,28 +218,34 @@ bool GPG::decrypt_file(std::string input_locate, std::string recipient, std::str
 }
 
 bool GPG::decrypt(std::string input, std::string recipient, std::string& output) {
-
+  bool flag = false;
   std::string input_locate = save_tempfile(input);
   std::string temp_locate;
 
   if (!this->decrypt_file(input_locate, recipient, temp_locate)) {
     // fail to decrypt
-    return false;
+    flag = true;
+    //return false;
   }
-
   if (!delete_file(input_locate)) {
     // fail to delete
+    return false;
+  }
+  if (flag) {
     return false;
   }
 
   std::string buff;
   if (!read_file(temp_locate, buff)) {
     // fail to read
-    return false;
+    flag = true;
+    //return false;
   }
-
   if (!delete_file(temp_locate)) {
     // fail to delete
+    return false;
+  }
+  if (flag) {
     return false;
   }
 
