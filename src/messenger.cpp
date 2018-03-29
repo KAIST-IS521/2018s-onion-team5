@@ -9,7 +9,6 @@
 #define FROM "moncadeau92@naver.com"
 #define TO "skc01012001@naver.com"
 #define PATH "~/IS521/Test/Enc.txt"
-#define PASSPHRASE "ks5202xw!@"
 
 Messenger::Messenger() 
 {}
