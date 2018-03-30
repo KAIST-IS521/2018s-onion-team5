@@ -194,7 +194,8 @@ int main(int argc, char *argv[]) {
       Message m;
       m.setFrom(from);
       m.setTo(to);
-      m.setContent("HELL oWorld!");
+      //m.setContent("HELL oWorld!");
+      m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
 
       filename = m.serialize();
     }
@@ -204,8 +205,7 @@ int main(int argc, char *argv[]) {
     std::string filename2;
     Message m2;
 
-    //route.push_front(from);
-    from2 = to; // TestUser5
+    from2 = to;
 
     int size = route.size();
     for (int i = 0; i < size; ++i){
@@ -224,9 +224,6 @@ int main(int argc, char *argv[]) {
       filename = m2.serialize();
       m2.clear();
     }
-
-    std::string x = "xxd " + filename;
-    system(x.c_str());
   }
 
   if (false) {
@@ -243,7 +240,6 @@ int main(int argc, char *argv[]) {
     if (to.compare(m.getTo()) == 0 && m.getType() != 0) {
       std::cout << "Oh, it's for me??" << std::endl;
     }
-
 
     END_RELAY:
     ;
@@ -300,7 +296,11 @@ int main(int argc, char *argv[]) {
     m.clear();
 
     if (!m.deserialize(output)) { }
-    std::cout << m.getContent() << std::endl;
+    if (m.getType() == 1) {
+      std::cout << m.getContent() << std::endl;
+    } else if (m.getType() == 2) {
+      std::cout << 2 << ": "<< m.getContent() << std::endl;
+    }
   }
 
   std::string x;

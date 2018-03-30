@@ -73,13 +73,11 @@ void Message::clear() {
   this->content.clear();
 }
 
-// return filename
 std::string Message::serialize() {
 
   std::string locate = get_temppath();
   time_t t = 0;
   size_t s = 0;
-  //int i = 0;
 
   std::ofstream os;
   os.open(locate, std::ofstream::binary);
@@ -146,10 +144,6 @@ bool Message::deserialize(std::string input) {
   char buff[1024 + 1] = {0};
   size_t read_size;
 
-  //is.read(buff, 2);
-  //read_size = is.gcount();
-  //buff[2] = 0;
-
   is.read(buff, 2);
   if (memcmp(buff, MESSAGE_PREFIX, 2) != 0) {
     goto END_DESERIALIZE;
@@ -170,7 +164,7 @@ bool Message::deserialize(std::string input) {
   this->to.assign(buff, s);
 
   is.read((char *) &t, sizeof(time_t));
-  t = BSWAP64(t); // 8 byte
+  t = BSWAP64(t);
 
   is.read((char *) &this->type, sizeof(char));
 
@@ -178,11 +172,6 @@ bool Message::deserialize(std::string input) {
   if (memcmp(buff, MESSAGE_POSTFIX, 2) != 0) {
     goto END_DESERIALIZE;
   }
-
-  std::cout << this->from << std::endl;
-  std::cout << this->to << std::endl;
-  std::cout << t << std::endl;
-  std::cout << (short)this->type << std::endl;
 
   if (this->type == 1) {
     while(!is.eof()) {
@@ -192,16 +181,12 @@ bool Message::deserialize(std::string input) {
       buff[read_size] = 0;
       this->content.append(buff);
     }
-    //is.read((char *) &s, sizeof(size_t));
-    //this->content.resize(BSWAP64(s));
-    //is.read(&this->content[0], sizeof(char) * s);
   } else {
 
     std::string locate;
 
     if (this->type == 2) {
       is.read((char *) &s, sizeof(size_t));
-      //locate.resize();
       s = BSWAP64(s);
       char *buff = new char[s];
       is.read(buff, sizeof(char) * s);
@@ -218,7 +203,6 @@ bool Message::deserialize(std::string input) {
     }
 
     this->content = locate;
-    std::cout << this->content << std::endl;
 
     std::ofstream os;
     os.open(locate, std::ofstream::binary);
@@ -235,11 +219,7 @@ bool Message::deserialize(std::string input) {
     }
     os.close();
 
-    std::string temp;
-    temp = "xxd " + this->content;
-    system(temp.c_str());
   }
-  std::cout << this->content << std::endl;
 
   ret = true;
 END_DESERIALIZE:
