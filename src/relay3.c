@@ -59,13 +59,13 @@
  */
 struct client {
 	/* The clients socket. */
-	int fd;
-	int fd_ui;
-	FILE *fp;
+	int 		fd;
+	int 		fd_ui;
+	FILE 		*fp;
 	//int ui;
-	char file_name[char_len];
+	char 		file_name[char_len];
 	/* The bufferedevent for this client. */
-	struct bufferevent *buf_ev;
+	struct 	bufferevent *buf_ev;
 };
 
 /**
@@ -110,6 +110,7 @@ buffered_on_read_hj(struct bufferevent *bev, void *arg)
 	struct client *client = (struct client *)arg;
 	int n = -1;
 	char tmp[1024];
+	printf("bufferd_on_read_hj\n");
 	while (1) {
 		n = bufferevent_read(bev, tmp, sizeof(tmp));
 		if (n <= 0)
@@ -152,6 +153,25 @@ buffered_on_error_ui(struct bufferevent *bev, short what, void *arg)
   free(client);
 }
 
+void
+buffered_on_error_relay(struct bufferevent *bev, short what, void *arg)
+{
+  struct client *client = (struct client *)arg;
+
+  if (what & EVBUFFER_EOF) {
+    /* Client disconnected, remove the read event and the
+     * free the client structure. */
+    printf("Client disconnected.\n");
+  }
+  else {
+    warn("Client socket error, disconnecting.\n");
+  }
+  bufferevent_free(client->buf_ev);
+  close(client->fd);
+  fclose(client->fp);
+  free(client);
+}
+
 /**
  * Called by libevent when there is an error on the underlying socket
  * descriptor.
@@ -166,7 +186,34 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 	char header_buff[128] = {0,}; // 헤더 버퍼
 	int header_len_check = 2; //받은 파일의 시작이 0xdead(2바이트) 인지 확인
 	int total_header_len = 4; // ####임시####, 헤더 총 길이
+	
+	// aslkfjasdlkfjasldf
+	FILE *fp = NULL;
+	int server_sockfd;
+	struct sockaddr_in serveraddr;
+	int client_len;
+	char buffer[1024] = {0, };
 
+	if ((server_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+		perror("socket");
+
+	serveraddr.sin_family = AF_INET;
+	if (client->fd == 9) {
+		printf("fd is 9\n");
+		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	}
+	if (client->fd == 10) {
+		printf("fd is 10\n");
+		serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
+	}
+	serveraddr.sin_port = htons(5555);
+	client_len = sizeof(serveraddr);
+
+	if (connect(server_sockfd, (struct sockaddr *)&serveraddr, client_len) < 0)
+	{
+			perror("connect error :");
+	}	
+	//aslkdjflaskdjfalskdf
 
 	if (what & EVBUFFER_EOF) {
 		/* Client disconnected, remove the read event and the
@@ -178,56 +225,83 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 	}
 	bufferevent_free(client->buf_ev);
 	close(client->fd);
+
 	if (client->fp) {
-		printf("client->ui:%d\n",client->ui);
+		printf("client->fp close\n");
 		fclose(client->fp);
 	}
 
-	if (client->ui == 0) {
-		printf("f_name:%s\n",client->file_name);
-		do {
-			rand_string(temp_file_name, char_len);
-			printf("temp_f_name: %s\n", temp_file_name);
-		} while(access(temp_file_name, F_OK) != -1);
+	printf("f_name:%s\n",client->file_name);
+	// output 파일이름 지정: temp_file_name. 겹치면 안되니까 랜덤 스트링
+	do {
+		rand_string(temp_file_name, char_len);
+		printf("temp_f_name: %s\n", temp_file_name);
+	} while(access(temp_file_name, F_OK) != -1);
+	
+	fp = fopen(client->file_name,"rb");
+	if (!fp)
+		perror("fopen");
 
-		ret = pgp_dec(client->file_name,"is521ghkdlxld",temp_file_name);
-		printf("ret: %d, client_fd: %d\n",ret,client->fd);
-		if (ret == 0) {
-			printf("decryption success\n");
-			client->fp = fopen(temp_file_name,"rb");
-			if (!(client->fp))
-				perror("fopen");
-			len = fread(header_buff, sizeof(char), header_len_check, client->fp);
-			if (len == 2) {
-				printf("read %dbyte from decrypted file\n",header_len_check);
-				if (header_buff[0] == 'a' && header_buff[1] == 'b') {
-					printf("it is our protocol message\n");
-					//write(client->fd_ui)           asdfasdfasdfasdfafds
-					/*
-					fread..(이전에 fread했으므로 rewind 고려
-					if( destination is mine)
-						write(port 5556, 데이터 도착) 포맷: "홍길동"파일 도착. 파일 이름 Temp_file_name->"홍길동"으로 변경
-					if( destination is not mine)
-						connect(from에 쓰여진 노드와 커넥트)
-						write(from에 쓰여진 노드에게 전송)					
-					*/
-				}
-			}
-			if (len != 2) {
-				printf(" ret != %d in fread, after decrypt\n",header_len_check);
-				//어니언 프로토콜 데이터 아님. 파일 삭제
+	while (feof(fp) == 0)    // 파일 포인터가 파일의 끝이 아닐 때 계속 반복
+	{
+			fread(buffer, sizeof(char), 1024, fp);    // 1바이트씩 4번(4바이트) 읽기
+			write(server_sockfd, buffer, 1024);
+			memset(buffer, 0, 1024);                          // 버퍼를 0으로 초기화
+	}
+	close(server_sockfd);
+
+	/*
+	int sock_fd;
+	sock_fd = conn
+	*/
+	/*
+	//다른 노드로부터 받은 파일 파싱 [시작]
+	ret = pgp_dec(client->file_name,"is521ghkdlxld",temp_file_name);
+	printf("ret: %d, client_fd: %d\n",ret,client->fd);
+	if (ret == 0) {
+		printf("decryption success\n");
+		printf("client->fd_ui: %d\n",client->fd_ui);
+		client->fp = fopen(temp_file_name,"rb");
+		if (!(client->fp))
+			perror("fopen");
+		len = fread(header_buff, sizeof(char), header_len_check, client->fp);
+		if (len == 2) {
+			printf("read %dbyte from decrypted file\n",header_len_check);
+			if (header_buff[0] == 'a' && header_buff[1] == 'b') {
+				printf("it is our protocol message\n");
+				//write(client->fd_ui)           asdfasdfasdfasdfafds
+				
+				fread..(이전에 fread했으므로 rewind 고려
+				if( destination is mine)
+					write(port 5556, 데이터 도착) 포맷: "홍길동"파일 도착. 파일 이름 Temp_file_name->"홍길동"으로 변경
+				if( destination is not mine)
+					connect(from에 쓰여진 노드와 커넥트)
+					write(from에 쓰여진 노드에게 전송)					
+				
 			}
 		}
-		if (ret == -1) {
-			printf(" decryption failed\n");
+		if (len != 2) {
+			printf(" ret != %d in fread, after decrypt\n",header_len_check);
 			//어니언 프로토콜 데이터 아님. 파일 삭제
 		}
 	}
+	//다른노드로부터 파일 파싱..
+	//2.내꺼다.
+	//3.릴레이 해줘야한다.
+	
+	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
+			buffered_on_write, buffered_on_error, client);
 
-	if (client->ui == 1) {
-		printf("[UI] RECV complete\n");
+	bufferevent_enable(client->buf_ev, EV_READ);
+	
+	//4. 내꺼 아니다 or 에러다. -> 버림(모두 프리)
+
+	if (ret == -1) {
+		printf(" decryption failed\n");
+		//디크립션 실패. 파일 삭제
 	}
-
+	//다른 노드로부터 받은 파일 파싱 [끝]
+	*/
 	free(client);
 }
 
@@ -264,11 +338,13 @@ on_accept(int fd, short ev, void *arg)
 	client->fd_ui = ((struct client *)arg)->fd_ui;
 	client->fd = client_fd;
 	printf("[on_accept] fd_ui:%d, fd:%d\n", client->fd_ui, client->fd);
+	/*	
 	if (arg) {
 		printf("free, client_relay\n");
 		free(arg);
 	}
-
+	*/
+/*
 	do {
 		rand_string(client->file_name, char_len);
 		printf("f_name: %s\n",client->file_name);
@@ -277,7 +353,7 @@ on_accept(int fd, short ev, void *arg)
 	client->fp = fopen(client->file_name,"wb");
 	if (!(client->fp))
 		perror("fopen");
-	
+*/
 	/* Create the buffered event.
 	 *
 	 * The first argument is the file descriptor that will trigger
@@ -302,11 +378,11 @@ on_accept(int fd, short ev, void *arg)
 	 * object here.
 	 */
 	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
-			buffered_on_write, buffered_on_error, client);
+			buffered_on_write, buffered_on_error_relay, client);
 
 	/* We have to enable it before our callbacks will be
 	 * called. */
-	bufferevent_enable(client->buf_ev, EV_READ);
+	bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
 
 	printf("[Relay] Accepted connection from %s\n", 
 			inet_ntoa(client_addr.sin_addr));
@@ -316,10 +392,8 @@ void relay()
 {
 	int listen_fd, listen_fd2;
 	struct sockaddr_in listen_addr, listen_addr2;
-	struct event ev_accept, ev_accept2;
+	struct event ev_accept;
 	int reuseaddr_on, reuseaddr_on2;
-	int connect_from_UI = 1;
-	int connect_from_others = 0;
 	socklen_t client_len2;
 	struct client *client;
 	struct client *client_relay;
@@ -392,7 +466,7 @@ void relay()
 	if (setnonblock(client->fd_ui) < 0)
 		err(1, "failed to set server socket to non-blocking22222222222222");
 
-	client->buf_ev = bufferevent_new(client->fd_ui, buffered_on_read_ui,
+	client->buf_ev = bufferevent_new(client->fd_ui, buffered_on_read,
 			buffered_on_write_ui, buffered_on_error_ui, client);
 
 	/* We have to enable it before our callbacks will be
