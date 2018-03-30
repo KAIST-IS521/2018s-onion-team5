@@ -196,22 +196,25 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 
 	if ((server_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 		perror("socket");
-
+	
 	serveraddr.sin_family = AF_INET;
 	if (client->fd == 9) {
 		printf("fd is 9\n");
-		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
 	}
+	/*
 	if (client->fd == 10) {
 		printf("fd is 10\n");
 		serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
 	}
+	*/
 	serveraddr.sin_port = htons(5555);
 	client_len = sizeof(serveraddr);
 
 	if (connect(server_sockfd, (struct sockaddr *)&serveraddr, client_len) < 0)
 	{
 			perror("connect error :");
+			exit(-1);
 	}	
 	//aslkdjflaskdjfalskdf
 
@@ -249,6 +252,7 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 			memset(buffer, 0, 1024);                          // 버퍼를 0으로 초기화
 	}
 	close(server_sockfd);
+	fclose(fp);
 
 	/*
 	int sock_fd;
@@ -316,10 +320,6 @@ on_accept(int fd, short ev, void *arg)
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	struct client *client;
-	/*
-	struct client *arg_client = (struct client *)arg;
-	client->ui = arg_client->ui; //수정 필요
-	*/
 
 	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0) {
@@ -344,7 +344,6 @@ on_accept(int fd, short ev, void *arg)
 		free(arg);
 	}
 	*/
-/*
 	do {
 		rand_string(client->file_name, char_len);
 		printf("f_name: %s\n",client->file_name);
@@ -353,7 +352,7 @@ on_accept(int fd, short ev, void *arg)
 	client->fp = fopen(client->file_name,"wb");
 	if (!(client->fp))
 		perror("fopen");
-*/
+
 	/* Create the buffered event.
 	 *
 	 * The first argument is the file descriptor that will trigger
@@ -378,7 +377,7 @@ on_accept(int fd, short ev, void *arg)
 	 * object here.
 	 */
 	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
-			buffered_on_write, buffered_on_error_relay, client);
+			buffered_on_write, buffered_on_error, client);
 
 	/* We have to enable it before our callbacks will be
 	 * called. */
