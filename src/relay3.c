@@ -62,7 +62,7 @@ struct client {
 	int fd;
 	int fd_ui;
 	FILE *fp;
-	int ui;
+	//int ui;
 	char file_name[char_len];
 	/* The bufferedevent for this client. */
 	struct bufferevent *buf_ev;
@@ -242,8 +242,10 @@ on_accept(int fd, short ev, void *arg)
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	struct client *client;
+	/*
 	struct client *arg_client = (struct client *)arg;
 	client->ui = arg_client->ui; //수정 필요
+	*/
 
 	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0) {
@@ -259,63 +261,55 @@ on_accept(int fd, short ev, void *arg)
 	client = (struct client *)calloc(1, sizeof(*client));
 	if (client == NULL)
 		err(1, "malloc failed");
-	client->ui = arg_client->ui;
+	client->fd_ui = ((struct client *)arg)->fd_ui;
 	client->fd = client_fd;
-	if (client->ui == 0) {
-		do {
-			rand_string(client->file_name, char_len);
-			printf("f_name: %s\n",client->file_name);
-		} while(access(client->file_name, F_OK) != -1);
-
-		client->fp = fopen(client->file_name,"wb");
-		if (!(client->fp))
-			perror("fopen");
-		
-		/* Create the buffered event.
-		 *
-		 * The first argument is the file descriptor that will trigger
-		 * the events, in this case the clients socket.
-		 *
-		 * The second argument is the callback that will be called
-		 * when data has been read from the socket and is available to
-		 * the application.
-		 *
-		 * The third argument is a callback to a function that will be
-		 * called when the write buffer has reached a low watermark.
-		 * That usually means that when the write buffer is 0 length,
-		 * this callback will be called.  It must be defined, but you
-		 * don't actually have to do anything in this callback.
-		 *
-		 * The fourth argument is a callback that will be called when
-		 * there is a socket error.  This is where you will detect
-		 * that the client disconnected or other socket errors.
-		 *
-		 * The fifth and final argument is to store an argument in
-		 * that will be passed to the callbacks.  We store the client
-		 * object here.
-		 */
-		client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
-				buffered_on_write, buffered_on_error, client);
-
-		/* We have to enable it before our callbacks will be
-		 * called. */
-		bufferevent_enable(client->buf_ev, EV_READ);
-
-		printf("Accepted connection from %s\n", 
-				inet_ntoa(client_addr.sin_addr));
+	printf("[on_accept] fd_ui:%d, fd:%d\n", client->fd_ui, client->fd);
+	if (arg) {
+		printf("free, client_relay\n");
+		free(arg);
 	}
 
-	if (client->ui == 1) {		
-		client->buf_ev = bufferevent_new(client_fd, buffered_on_read,
-				buffered_on_write, buffered_on_error, client);
+	do {
+		rand_string(client->file_name, char_len);
+		printf("f_name: %s\n",client->file_name);
+	} while(access(client->file_name, F_OK) != -1);
 
-		/* We have to enable it before our callbacks will be
-		 * called. */
-		bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
+	client->fp = fopen(client->file_name,"wb");
+	if (!(client->fp))
+		perror("fopen");
+	
+	/* Create the buffered event.
+	 *
+	 * The first argument is the file descriptor that will trigger
+	 * the events, in this case the clients socket.
+	 *
+	 * The second argument is the callback that will be called
+	 * when data has been read from the socket and is available to
+	 * the application.
+	 *
+	 * The third argument is a callback to a function that will be
+	 * called when the write buffer has reached a low watermark.
+	 * That usually means that when the write buffer is 0 length,
+	 * this callback will be called.  It must be defined, but you
+	 * don't actually have to do anything in this callback.
+	 *
+	 * The fourth argument is a callback that will be called when
+	 * there is a socket error.  This is where you will detect
+	 * that the client disconnected or other socket errors.
+	 *
+	 * The fifth and final argument is to store an argument in
+	 * that will be passed to the callbacks.  We store the client
+	 * object here.
+	 */
+	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
+			buffered_on_write, buffered_on_error, client);
 
-		printf("Accepted connection from [UI] %s\n", 
-				inet_ntoa(client_addr.sin_addr));
-	}
+	/* We have to enable it before our callbacks will be
+	 * called. */
+	bufferevent_enable(client->buf_ev, EV_READ);
+
+	printf("[Relay] Accepted connection from %s\n", 
+			inet_ntoa(client_addr.sin_addr));
 }
 
 void relay()
@@ -372,6 +366,7 @@ void relay()
 		err(1, "failed to set server socket to non-blocking");
 	
 	//2
+	//TODO : free calloc
 	client = (struct client *)calloc(1, sizeof(*client));
 	if (client == NULL)
 		err(1, "malloc failed");
@@ -404,7 +399,7 @@ void relay()
 	 * called. */
 	bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
 
-	printf("Accepted connection from [UI] %s\n", inet_ntoa(listen_addr2.sin_addr));
+	printf("[UI] Accepted connection from %s\n", inet_ntoa(listen_addr2.sin_addr));
 
 	/* We now have a listening socket, we create a read event to
 	 * be notified when a client connects. */
