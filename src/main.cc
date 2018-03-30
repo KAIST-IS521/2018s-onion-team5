@@ -194,8 +194,8 @@ int main(int argc, char *argv[]) {
       Message m;
       m.setFrom(from);
       m.setTo(to);
-      //m.setContent("HELL oWorld!");
-      m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
+      m.setContent("HELL oWorld!");
+      //m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
 
       filename = m.serialize();
     }
@@ -218,6 +218,11 @@ int main(int argc, char *argv[]) {
   #else
       filename2 = filename;
   #endif
+      filename = filename2;
+      if (from2.compare(from) == 0) {
+        break;
+      }
+
       m2.setFrom(from2);
       m2.setTo(to2);
       m2.setBinary(filename2);
@@ -226,6 +231,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+//  std::string xxx = "xxd " + filename;
+//  system(xxx.c_str());
+
+/*
   if (false) {
     GPG gpg;
     gpg.verify_passphrase("TestUser1", "xptmxmdlf");
@@ -244,60 +253,83 @@ int main(int argc, char *argv[]) {
     END_RELAY:
     ;
   }
-
+*/
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser1", "xptmxmdlf");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser3", "xptmxmtka");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser4", "xptmxmtk");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser5", "xptmxmdh");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    m.clear();
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
 
-    if (!m.deserialize(output)) { }
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
+
     if (m.getType() == 1) {
       std::cout << m.getContent() << std::endl;
+      std::string x;
+      x = "xxd " + m.getContent();
+      system(x.c_str());
     } else if (m.getType() == 2) {
       std::cout << 2 << ": "<< m.getContent() << std::endl;
     }

@@ -95,6 +95,15 @@ std::string Message::serialize() {
   t = BSWAP64(time(NULL)); // 8 byte
 	os.write((char *) &t, sizeof(time_t)); // 8 byte
 
+/*
+"TestUser1(time): asdfjasldfjals"
+std::map<std::string, std::vector<std::string>> history
+
+history["TestUser1"] = std::vector<std::string>
+  */
+
+
+
   //i = BSWAP32(this->type);
   os.write((char *) &this->type, sizeof(char)); // 4byte
 
@@ -173,6 +182,7 @@ bool Message::deserialize(std::string input) {
     goto END_DESERIALIZE;
   }
 
+  /*
   if (this->type == 1) {
     while(!is.eof()) {
       char buff[1024 + 1] = {0};
@@ -182,7 +192,8 @@ bool Message::deserialize(std::string input) {
       this->content.append(buff);
     }
   } else {
-
+  */
+  {
     std::string locate;
 
     if (this->type == 2) {
@@ -194,7 +205,7 @@ bool Message::deserialize(std::string input) {
       buff[read_size] = 0;
       locate = buff;
       delete buff;
-    } else if (this->type == 0) {
+    } else if (this->type == 0 || this->type == 1) {
       locate = get_temppath();
     }
 
