@@ -14,6 +14,7 @@
 #include "../common/util.h"
 #include "../common/dumphex.h"
 #include "message_wrapper.h"
+#include "yang_crypto.h"
 
 int main(int argc, char *argv[]) {
   /*
@@ -170,6 +171,8 @@ int main(int argc, char *argv[]) {
   }
 
   */
+
+  /*
   std::string filename;
 
   std::string from;
@@ -230,6 +233,7 @@ int main(int argc, char *argv[]) {
       m2.clear();
     }
   }
+  */
 
 //  std::string xxx = "xxd " + filename;
 //  system(xxx.c_str());
@@ -254,6 +258,7 @@ int main(int argc, char *argv[]) {
     ;
   }
 */
+/*
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser1", "xptmxmdlf");
@@ -338,8 +343,72 @@ int main(int argc, char *argv[]) {
   std::string x;
   x = "rm /tmp/????????????????";
   system(x.c_str());
+*/
+
+  system("echo asdfasdfasdfasdfasdfasdf > /tmp/input");
+
+  std::vector<std::string> routepath;
+  routepath.push_back("TestUser2");
+  routepath.push_back("TestUser1");
+  routepath.push_back("TestUser3");
+  routepath.push_back("TestUser4");
+  routepath.push_back("TestUser5");
+
+  std::string filepath;
+  filepath = enc("/tmp/input", routepath);
+
+  std::cout << filepath << std::endl;
+
+  std::string cmd = "xxd " + filepath;
+  system(cmd.c_str());
+
+  routepath.clear();
+
+  int ret;
+  std::string output;
+  std::string to;
 
 
+  std::vector<std::vector<std::string>> gpg_info;
+  gpg_info.push_back(std::vector<std::string> {"TestUser1", "xptmxmdlf"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser3", "xptmxmtka"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser4", "xptmxmtk"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser5", "xptmxmdh"});
+
+  for (auto it = gpg_info.begin(); it != gpg_info.end(); ++it){
+
+    ret = dec(filepath, (*it)[0], (*it)[1], output, to);
+    if (ret == 1) {
+      std::cout << "Oh! It's for me!" << std::endl;
+      // put message to ui
+      // to do this thing we have to know from
+      //  ???, ???: message
+      std::cout << "File:" << output << std::endl;
+      std::string cmd = "xxd " + output;
+      system(cmd.c_str());
+    } else if (ret == 0) {
+      std::cout << "This is not mine... send to " << to << std::endl;
+      // relay to other
+      filepath = output;
+    } else if (ret == -1) {
+      std::cout << "Weired packet... " << std::endl;
+      std::cout << "STOP" << std::endl;
+      // drop
+      exit(1);
+    } else {
+      std::cout << "WHATTHEFUCK" << std::endl;
+      std::cout << "STOP" << std::endl;
+      // drop
+      exit(1);
+    }
+  }
+
+
+
+
+
+  std::cout << "DONE" << std::endl;
+  system("rm /tmp/input");
 
   return 0;
 }

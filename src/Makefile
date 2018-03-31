@@ -1,6 +1,7 @@
 CC = g++
 OBJS = fetch_key.o listen.o udp_client.o  main.o\
 gpg_wrapper.o message_wrapper.o \
+yang_crypto.o \
 ../common/dumphex.o ../common/node.pb.o \
 ../common/config.o ../common/http_client.o \
 ../common/sha1.o ../common/util.o

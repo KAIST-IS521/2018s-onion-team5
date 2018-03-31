@@ -9,6 +9,7 @@ class GPG {
 public:
   void set_dummy_cred();
   bool is_authorized();
+  void set_passphrase(std::string passphrase);
   bool verify_passphrase(std::string name, std::string passphrase);
   bool add_public_key(std::string locate);
   bool is_existed_key(std::string locate);

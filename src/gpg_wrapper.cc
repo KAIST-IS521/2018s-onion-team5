@@ -44,6 +44,11 @@ bool GPG::is_authorized() {
   return !(this->name.empty() || this->passphrase.empty());
 }
 
+void GPG::set_passphrase(std::string passphrase) {
+  this->name = "1";
+  this->passphrase = passphrase;
+}
+
 bool GPG::verify_passphrase(std::string name, std::string passphrase) {
   int status = 0;
 
@@ -194,17 +199,30 @@ bool GPG::decrypt_file(std::string input_locate, std::string& output_locate) {
   int status = 0;
   FORK_AND_WAIT({
     CLOSE_STDIO;
-    execlp(
-      "/usr/bin/gpg",
-      "gpg",
-        "-o", temp_locate.c_str(),
-        "--batch",
-        "--yes",
-        "--no-use-agent",
-        "--local-user", name.c_str(),
-        "--passphrase", passphrase.c_str(),
-        input_locate.c_str(),
-        0);
+    if (name.empty()) {
+      execlp(
+        "/usr/bin/gpg",
+        "gpg",
+          "-o", temp_locate.c_str(),
+          "--batch",
+          "--yes",
+          "--no-use-agent",
+          "--passphrase", passphrase.c_str(),
+          input_locate.c_str(),
+          0);
+    } else {
+      execlp(
+        "/usr/bin/gpg",
+        "gpg",
+          "-o", temp_locate.c_str(),
+          "--batch",
+          "--yes",
+          "--no-use-agent",
+          "--local-user", name.c_str(),
+          "--passphrase", passphrase.c_str(),
+          input_locate.c_str(),
+          0);
+    }
     perror("execlp");
   });
   printf("status %d\n", status);
