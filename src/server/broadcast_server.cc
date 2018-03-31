@@ -5,6 +5,8 @@
 #include <psocksxx/tcpnsockstream.h>
 #include <string>
 #include <unistd.h>
+#include <iostream>
+#include <algorithm>
 
 #include "../common/config.h"
 #include "../common/http_client.h"
