@@ -1,36 +1,18 @@
-CC = g++
-OBJS = fetch_key.o listen.o udp_client.o  main.o\
-gpg_wrapper.o message_wrapper.o \
-../common/dumphex.o ../common/node.pb.o \
-../common/config.o ../common/http_client.o \
-../common/sha1.o ../common/util.o
 
-TARGET = Onion5_client
-LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread
-CFLAGS= -std=c++11
+all: onitok_server onitok_client
 
-.SUFFIXES : .cc .o
+onitok_server:
+	make -C common
+	make -C server
+	cp server/Onion5_server onitok_server
 
-all: $(TARGET)
-
-%.o: %.cc
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $(OBJS) $(LIBS)
+onitok_client:
+	make -C common
+	make -C client
+	cp client/Onion5_client onitok_client
 
 clean:
-	rm -f $(OBJS) $(TARGET)
-
-
-#CXX = g++
-#CXXFLAGS = -c -std=gnu++11 -Wall
-
-#buildfiles = main
-#removefiles = *.o
-
-#all : main.cpp messenger.o message.o pgp_crypto.o common.o
-#	$(CXX) -o main main.cpp messenger.cpp message.cpp pgp_crypto.c common.c
-
-#clean :
-#	$(RM) $(removefiles)
+	make -C common clean
+	make -C server clean
+	make -C client clean
+	rm onitok_server onitok_client
