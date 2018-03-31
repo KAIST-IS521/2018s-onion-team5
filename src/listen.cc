@@ -5,9 +5,10 @@
 
 #include "../common/config.h"
 #include "../common/node.pb.h"
-#include "listen.h"
 #include "../common/dumphex.h"
 #include "../common/sha1.hpp"
+#include "listen.h"
+
 
 void listener(std::string github_id, std::map<std::string, std::string> &list) {
   psocksxx::tcpnsockstream ss;

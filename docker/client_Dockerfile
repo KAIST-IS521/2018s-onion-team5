@@ -1,0 +1,24 @@
+FROM ubuntu:xenial
+MAINTAINER 2018s-IS511-Team5
+
+USER root
+
+RUN DIST=xenial && \
+    sed -i 's/deb.debian.org/ftp.daumkakao.com/' /etc/apt/sources.list
+
+RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends --no-install-suggests \
+    make git libncurses-dev build-essential libcurl4-openssl-dev libpsocksxx-dev gpg
+
+RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get clean
+
+COPY client.sh /root/client.sh
+RUN chmod +x /root/client.sh
+COPY ../src /root/src
+
+EXPOSE 9099
+
+WORKDIR /root
+CMD ["/root/client.sh"]

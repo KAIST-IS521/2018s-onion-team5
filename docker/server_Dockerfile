@@ -1,0 +1,18 @@
+FROM ubuntu:xenial
+MAINTAINER 2018s-IS511-Team5
+
+RUN DIST=xenial && \
+    sed -i 's/deb.debian.org/ftp.daumkakao.com/' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends --no-install-suggests \
+    make git libncurses-dev g++ libcurl4-openssl-dev libpsocksxx-dev
+
+ADD server.sh /root/server.sh
+RUN chmod +x /root/server.sh
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
+
+EXPOSE 9099
+
+WORKDIR /root
+CMD ["/root/server.sh"]
