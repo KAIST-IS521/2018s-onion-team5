@@ -33,6 +33,8 @@
 #include <time.h>
 #include "common.h"
 #include "pgp_crypto.h"
+#include <iostream>
+#include <vector>
 
 /* Required by event.h. */
 #include <sys/time.h>
@@ -60,12 +62,15 @@
 struct client {
 	/* The clients socket. */
 	int 		fd;
+	int			fd2;
 	int 		fd_ui;
 	FILE 		*fp;
 	//int ui;
 	char 		file_name[char_len];
 	/* The bufferedevent for this client. */
 	struct 	bufferevent *buf_ev;
+	struct 	bufferevent *buf_ev2;
+	struct evbuffer *ev_buff;
 };
 
 /**
@@ -101,12 +106,27 @@ buffered_on_read(struct bufferevent *bev, void *arg)
 void
 buffered_on_read_empty(struct bufferevent *bev, void *arg)
 {
+	printf("read emtpy\n");
+}
+
+void
+buffered_on_write_empty(struct bufferevent *bev, void *arg)
+{
+	struct client *client = (struct client *)arg;
+	printf("write_empty\n");
+	//bufferevent_write_buffer(bev, client->ev_buff);
 }
 
 void
 buffered_on_read_ui(struct bufferevent *bev, void *arg)
 {
 	printf("buffered_on_read_ui\n");
+	/*
+	read();
+	if( 보낼파일이 존재)
+		encrypt(plain_file_name,recipient, list); //인풋으로 plain_file, list, 받는사람 주면, encrypt해서 output파일로 줌.
+		write(ui_fd,buff,strlen(buff));
+	*/
 }
 
 void
@@ -114,7 +134,7 @@ buffered_on_read_hj(struct bufferevent *bev, void *arg)
 {
 	struct client *client = (struct client *)arg;
 	int n = -1;
-	char tmp[1024];
+	char tmp[1024] = {0, };
 	while (1) {
 		n = bufferevent_read(bev, tmp, sizeof(tmp));
 		if (n <= 0)
@@ -144,10 +164,10 @@ buffered_on_read_relay(struct bufferevent *bev, void *arg)
 {
 	struct client *client = (struct client *)arg;
 	int n = -1;
-	char tmp[1024];
+	char tmp[1024]= {0,};
 	while (1) {
 		n = bufferevent_read(bev, tmp, sizeof(tmp));
-		printf("n: %d\n",n);
+		printf("[CB]READ_RELAY Read length: %d\n",n);
 		if (n <= 0)
 			break;
 		write(client->fd, tmp, n);
@@ -175,7 +195,7 @@ buffered_on_error_ui(struct bufferevent *bev, short what, void *arg)
 void
 buffered_on_error_relay(struct bufferevent *bev, short what, void *arg)
 {
-	printf("error_relay\n");
+	printf("******************************error_relay************************\n");
   struct client *client = (struct client *)arg;
 
   if (what & EVBUFFER_EOF) {
@@ -199,54 +219,68 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 	struct sockaddr_in serveraddr;
 	int client_len;
 	char buffer[1024] = {0, };
-	int ret = 1;
 	int n = -1;
+	int ret = 1;
+	
+	//테스트용 변수들. 원래는 다른곳에서 받아와야함.
+	std::string input_file_name;
+	std::string next_dest = "143.248.231.97";
 
   if (what & EVBUFFER_EOF) {
     /* Client disconnected, remove the read event and the
      * free the client structure. */
     printf("Client disconnected.\n");
+		printf("fd_ui: %d, fd: %d\n",client->fd_ui, client->fd);
   	bufferevent_free(client->buf_ev);
-  	close(client->fd);
   	fclose(client->fp);
+  	close(client->fd);
 
-		//parser(char file_name[256], char *passphrase, struct parser_out *parser_out);
+		/*
+			dec(string input_file_name,
+					string my_github_id,
+					string passphrase,
+					string &output_file_name,
+					string &github_id);
+		*/
 		//ret = parser(client->file_name, "is521ghkdlxld", parser_out);
-
 		//ret 1: 릴레이, ret 0: 내꺼, ret -1: 버림
 		if (ret == 1) {
 
 			if ((client->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 				perror("socket");
-			
 			serveraddr.sin_family = AF_INET;
-			serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
-			serveraddr.sin_port = htons(5555);
+			serveraddr.sin_addr.s_addr = inet_addr(next_dest.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환
+			serveraddr.sin_port = htons(SERVER_PORT);
 			client_len = sizeof(serveraddr);
-
 			/*
 			if (setnonblock(client->fd) < 0)
 				err(1, "[error_hj] failed to set server socket to non-blocking");
 			*/
-
 			if (connect(client->fd, (struct sockaddr *)&serveraddr, client_len) < 0)
 				perror("connect error :");
-			
+
 			client->fp = fopen(client->file_name,"rb");
 			if (!(client->fp))
 				perror("fopen");
-
-			client->buf_ev = bufferevent_new(client->fd, buffered_on_read_relay,
-					buffered_on_write, buffered_on_error_relay, client);
-
-			bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
-			// 파일 포인터가 파일의 끝이 아닐 때 계속 반복
+			
 			while (feof(client->fp) == 0) {
-				printf("how many times\n");
 				n = fread(buffer, sizeof(char), 1024, client->fp);    // 1바이트씩 4번(4바이트) 읽기
-				bufferevent_write(client->buf_ev, buffer, n);
+				write(client->fd, buffer, n);
 				memset(buffer, 0, 1024);                          // 버퍼를 0으로 초기화
 			}
+			fclose(client->fp);
+			close(client->fd);
+		
+			/*
+			len = get_file_size(client->fp);
+			ret2 = evbuffer_add_file((client->buf_ev)->output, fileno(client->fp), 0, len);
+			printf("ret2: %d\n",ret2);
+			//ret2 = bufferevent_write_buffer(client->buf_ev, ev_buff);
+			bufferevent_enable(client->buf_ev, EV_WRITE);
+			*/	
+			//fclose(client->fp);
+  		//bufferevent_free(client->buf_ev);
+  		//close(client->fd);
 		}
 		else if (ret == 0) {
 			//write to local host
@@ -257,7 +291,6 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 		else {
 			printf("You must not see this message\n");
 		}
-
   }
   else {
     warn("Client socket error, disconnecting.\n");
@@ -270,7 +303,7 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 		else {
 			printf("[Socket error] can't remove file name:%s\n",client->file_name);
 		}
-  	free(client);
+  	//free(client);
   }
 	printf("error_hj end\n");
 }
@@ -307,13 +340,11 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 		printf("fd is 9\n");
 		serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
 	}
-	*/
-	/*
 	if (client->fd == 10) {
 		printf("fd is 10\n");
 		serveraddr.sin_addr.s_addr = inet_addr("143.248.231.97");
 	}
-	*/
+	*/ 
 	serveraddr.sin_port = htons(5555);
 	client_len = sizeof(serveraddr);
 
@@ -323,7 +354,7 @@ buffered_on_error(struct bufferevent *bev, short what, void *arg)
 			exit(-1);
 	}	
 	//aslkdjflaskdjfalskdf
-
+	
 	if (what & EVBUFFER_EOF) {
 		/* Client disconnected, remove the read event and the
 		 * free the client structure. */
