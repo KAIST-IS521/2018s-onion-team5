@@ -197,10 +197,8 @@ int chat_room(int x, int selected_item) {
 
 		mvwprintw(chat[3], 0, 0, ">>");
 		wmove(chat[3], 0, 2);
-		noecho();
 		keypad(chat[3], TRUE);
 		for(int i = 0; i < 199; i ++){
-			memset(message, 0, 200);
 			key = wgetch(chat[3]);
 			if ( key == ESCAPE) {
 				if(i == 0) {
@@ -236,16 +234,23 @@ int chat_room(int x, int selected_item) {
 			{
 				if(i == 0){
 					message[i] = 0;
+					i = -1;
 					continue;
 				}
 				else {
 					i--;
+					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * (i/40), " ");
+					message[i] = 0;
 					delch();
-					if(i != 0){
+					wmove(chat[3], (i + 2)/40, (i+2) - 40 * (i/40));
+					wnoutrefresh(chat[3]);
+					doupdate();
+					//ungetch();
+					if(i > 0){
 						i--;
 						continue;
 					}
-					else if(i == 0){
+					else if(i <= 0){
 						memset(message, 0, 200);
 						i = -1;
 						continue;
@@ -276,6 +281,7 @@ int chat_room(int x, int selected_item) {
 
 		//Todo : socket send
 		msg_send = pack_total(userlist[selected_item], msg_total, sel);
+		memset(message, 0, 200);
 	}
 	delete message;
 }
