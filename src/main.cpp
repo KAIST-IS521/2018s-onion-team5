@@ -2,7 +2,7 @@
 #include <map>
 #include <unistd.h>
 #include <thread>
-#include "ui_receiver.hpp"
+#include "ui.hpp"
 #include <cstring>
 
 #define ESCAPE 27
