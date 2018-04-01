@@ -453,7 +453,7 @@ int recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff
 	std::string read_soc;
 	newmsg = receiver(read_soc);
 	mtx.lock();
-	if(reff = false){
+	if(reff == false){
 //Distribute newmsg to hist;
 		dist_to_hist(newmsg);
 		reff = true;

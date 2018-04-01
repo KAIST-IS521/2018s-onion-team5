@@ -3,8 +3,15 @@
 #include <string>
 #define IN
 #define OUT
+#include <vector>
+#include <map>
+
 
 //////////////////////////////////////////////////////
+
+#define IN
+#define OUT
+
 int get_file_size(IN FILE *fp);
 char *rand_string(IN char *str, IN size_t size);
 
@@ -16,7 +23,21 @@ std::string save_tempfile(std::string content);
 bool write_file(std::string locate, std::string data);
 bool read_file(std::string locate, std::string& data);
 bool delete_file(std::string locate);
+void rand_seed();
 std::string random_string(size_t length);
+
+std::vector<std::string> generate_path(
+  std::map<std::string, std::string> nodelist,
+  std::string from,
+  std::string to,
+  int count
+);
+
+std::vector<std::string> generate_path(
+  std::map<std::string, std::string> nodelist,
+  std::string from,
+  std::string to
+);
 
 #if 1
 #define BSWAP32(x) __builtin_bswap32(x)

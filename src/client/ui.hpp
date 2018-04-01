@@ -23,17 +23,18 @@ public :
 public :
 	UI();
 	void init_testset();
-	void hist_map();
+	void hist_map(std::map<std::string, std::vector<std::string> > & hist);
 	void init_scr();
 	int check_quit(int x);
-	WINDOW ** test_list(int start_col);
+	WINDOW ** test_list(int start_col, int len);
 	int scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num, int x);
 	WINDOW ** chat_form(int selected_item, int start_col);
-	std::string id_total(std::string str1, std::string str2, int sel);
-	int chat_room(int x, int selected_item);
-	int messenger();
+	std::string pack_total(std::string str1, std::string str2, int sel);
+	int chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff);
+	void messenger_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff);
 	std::vector<std::string> receiver(std::string recv);
-	void dist_to_hist(std::vector<std::string> vec);
-	int recv(bool &running);
+	void dist_to_hist(std::vector<std::string> vec, std::map<std::string, std::vector<std::string> > & hist);
+	void recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff);
+	int main();
 	~UI();
 };
