@@ -188,14 +188,19 @@ std::vector<std::string> generate_path(
   keys.erase(std::remove(keys.begin(), keys.end(), from), keys.end());
   keys.erase(std::remove(keys.begin(), keys.end(),   to), keys.end());
 
-  auto rng = std::default_random_engine {};
-  rng.seed(rand());
-  std::shuffle(std::begin(keys), std::end(keys), rng);
+  if (keys.size() > 0) {
+    auto rng = std::default_random_engine {};
+    rng.seed(rand());
+    std::shuffle(std::begin(keys), std::end(keys), rng);
+  }
 
   result.push_back(from);
+  count = (keys.size() < count)? keys.size(): count;
   for (int i = 0; i < count; ++i)
     result.push_back(keys[i]);
   result.push_back(to);
+
+
 
   return result;
 }
@@ -206,4 +211,9 @@ std::vector<std::string> generate_path(
   std::string to
 ) {
   return generate_path(nodelist, from, to, 3);
+}
+
+bool is_existed_file (const std::string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
 }

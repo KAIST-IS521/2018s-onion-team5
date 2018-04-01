@@ -30,7 +30,7 @@ void UI::init_scr() {
 	init_pair(1, COLOR_WHITE, COLOR_BLACK);
 	init_pair(2, COLOR_WHITE, COLOR_BLUE);
 	init_pair(3, COLOR_BLACK, COLOR_YELLOW);
-	init_pair(4, COLOR_BLACK, COLOR_WHITE); 
+	init_pair(4, COLOR_BLACK, COLOR_WHITE);
 	curs_set(2);
 	noecho();
 	keypad(stdscr, TRUE);
@@ -42,7 +42,7 @@ int UI::check_quit(int x)
     int key;
     check = newwin(3, 40, 3, x/2 - 20);
     wmove(check, 1, 2);
-    wprintw(check, "Exit program (y/N) ? "); 
+    wprintw(check, "Exit program (y/N) ? ");
     wbkgd(check, COLOR_PAIR(2));
     box(check, 0, 0);
     refresh();
@@ -77,30 +77,30 @@ int UI::scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num
 {
     int key;
     int selected = 0;
-    while (1) 
+    while (1)
     {
         key = getch();
-        if (key == KEY_DOWN || key == KEY_UP) 
+        if (key == KEY_DOWN || key == KEY_UP)
         {
             wbkgd(items[selected + 1], COLOR_PAIR(3));
             wnoutrefresh(items[selected + 1]);
-            if (key == KEY_DOWN) 
+            if (key == KEY_DOWN)
             {
                 selected = (selected + 1) % count;
-            } 
-            else 
+            }
+            else
             {
                 selected = (selected + count - 1) % count;
             }
             wbkgd(items[selected + 1],COLOR_PAIR(2));
             wnoutrefresh(items[selected + 1]);
             doupdate();
-        } 
-        else if (key == ESCAPE) 
+        }
+        else if (key == ESCAPE)
         {
  	       return check_quit(x);
-        } 
-        else if (key == ENTER) 
+        }
+        else if (key == ENTER)
         {
             return selected + 1;
         }
@@ -108,7 +108,7 @@ int UI::scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num
 }
 
 WINDOW ** UI::chat_form(int selected_item, int start_col){
-	
+
 	int key;
 	WINDOW ** chat_items;
 	unsigned int len = userlist[selected_item].size() / 2;
@@ -171,7 +171,7 @@ int UI::chat_room(int x, int selected_item, std::map<std::string, std::vector<st
 				show_msg = *(history->begin() + i);
 				mvwprintw(chat[2], offset, 0, "%s", show_msg.c_str());
 				offset += show_msg.size() / 40 + 1;
-			}	
+			}
 			wnoutrefresh(chat[2]);
 			doupdate();
 		}
@@ -337,7 +337,7 @@ void UI::messenger_UI (std::map<std::string, std::vector<std::string> > & hist, 
 	delete password;
 	touchwin(stdscr);
 	refresh();
-	
+
 	//socket open
 
 	//connect to relay
@@ -356,21 +356,21 @@ void UI::messenger_UI (std::map<std::string, std::vector<std::string> > & hist, 
 			continue;
 		}
 
-		if(chat_room(x, selected_item, hist, reff) == 1) { 
+		if(chat_room(x, selected_item, hist, reff) == 1) {
 			touchwin(stdscr);
         	refresh();
 			continue;
 		}
-		else 
+		else
 	    	touchwin(stdscr);
-        	refresh(); 
+        	refresh();
 			continue;
 
         touchwin(stdscr);
-        refresh(); 
+        refresh();
         delete user_list;
 	}
-	
+
 	endwin();
 
 }
@@ -388,7 +388,7 @@ std::vector<std::string> UI::receiver(std::string recv) {
 		len2 = recv[2+len];
 		str2 = recv.substr(len1 + 3, len2);
 		if(check == '0'){
-			
+
 			msg_tot.push_back(str2);
 
 		}
@@ -401,7 +401,7 @@ std::vector<std::string> UI::receiver(std::string recv) {
 		}
 		else if(check == '4'){
 			//list
-			
+
 		}
 		recv.erase(0, 3 + len1 + len2);
 	}
@@ -450,8 +450,11 @@ int main() {
 	std::vector<std::string> userlist;
 	std::map<std::string, std::vector<std::string> > hist;
 
-	std::thread t1(messenger_UI, std::ref(hist), std::ref(reff));
-	std::thread t2(recv_UI, std::ref(hist), std::ref(reff));
+
+  UI ui;
+
+	std::thread t1(ui.messenger_UI, std::ref(hist), std::ref(reff));
+	std::thread t2(ui.recv_UI, std::ref(hist), std::ref(reff));
 
 	t1.join();
 	t2.join();
@@ -464,6 +467,6 @@ UI::~UI()
 	delete password;
 	delete message;
 	delete gitid;
-	userlist.clear();	
+	userlist.clear();
 	hist.clear();
 }

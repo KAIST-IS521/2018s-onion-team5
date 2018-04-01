@@ -37,6 +37,9 @@ std::vector<std::string> generate_path(
   std::string to
 );
 
+
+bool is_existed_file (const std::string& name);
+
 #if 1
 #define BSWAP32(x) __builtin_bswap32(x)
 #define BSWAP64(x) __builtin_bswap64(x)

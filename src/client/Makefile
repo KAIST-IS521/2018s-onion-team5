@@ -5,6 +5,7 @@ gpg_wrapper.o message_wrapper.o \
 ../common/config.o ../common/http_client.o \
 ../common/sha1.o ../common/util.o \
 ../common/tcp_server.o ../common/tcp_client.o \
+messenger.o
 
 TARGET = Onion5_client
 LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread

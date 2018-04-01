@@ -9,12 +9,19 @@
 #include "../common/sha1.hpp"
 #include "../common/tcp_server.h"
 #include "../common/tcp_client.h"
+#include "../common/util.h"
+#include "messenger.h"
 #include "listen.h"
+#include "message_wrapper.h"
 
 #include <stdio.h>
 
 
-void listener(std::string github_id, std::map<std::string, std::string> &list) {
+void liste_loop(Messenger &msgr) {
+  //std::thread thread_liste(liste_loop, std::ref(msgr));
+  std::string github_id = msgr.get_name();
+  std::map<std::string, std::string> &list = msgr.get_node_list();
+
   TCP_Server server("0.0.0.0", 9099);
 
   if (!server.bind()) {
@@ -33,12 +40,19 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
 
     std::string msg;
     int size = client->recv(msg);
-    puts("===============================================================");
-    DumpHex(msg);
-    puts("===============================================================");
+    //puts("===============================================================");
+    //DumpHex(msg);
+    //puts("===============================================================");
 
     // node list
+
+    if (msg.substr(0, 2).compare("\x2F\x74") == 0) {
+      DumpHex(msg);
+      std::string cmdasdfasd = "xxd "+ msg;
+      system(cmdasdfasd.c_str());
+    }
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
+      std::cout << "LIST" << std::endl;
       int len = msg.size();
       if (msg.substr(len - 2, 2).compare(LIST_POSTFIX) == 0) {
         Onion5::NodeList node_list;
@@ -47,15 +61,13 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         list.clear();
         for (int i = 0; i < node_list.nodes_size(); ++i) {
           const Onion5::Node& node = node_list.nodes(i);
-          std::cout << node.github_id() << std::endl;
-          std::cout << node.ip_addr() << std::endl;
           list.insert (std::pair<std::string, std::string>(node.github_id(), node.ip_addr()));
         }
       }
     }
     // health check
     else if (msg.substr(0, 2).compare(PING_PREFIX) == 0) {
-
+std::cout << "health" << std::endl;
       int len = msg.size();
       if (msg.substr(len - 2, 2).compare(PING_POSTFIX) == 0) {
         std::string key = msg.substr(2, len - 4);
@@ -79,14 +91,46 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
           // error handling
         }
       }
-    }
-    // encrypted packet
-    else if (false) {
-      // encrypted packet
+    } else if (is_existed_file(msg)) {
+      Message m;
+      if (m.deserialize(msg)) {
+        GPG &g = msgr.getGPG();
+        std::string inin_file;
+        std::string outo_file;
 
+        inin_file = m.getContent();
+        std::cout << "==============================" << std::endl;
+        std::cout << inin_file << std::endl;
+        std::cout << m.getType() << std::endl;
+        std::cout << "==============================" << std::endl;
+
+        if (g.decrypt_file(inin_file, outo_file)) {
+          m.clear();
+          m.deserialize(outo_file);
+
+          std::cout << "From: " << m.getFrom() << std::endl;
+          std::cout << "to: " << m.getTo() << std::endl;
+          std::cout << "Type: " << m.getType() << std::endl;
+          std::cout << "content: " << m.getContent() << std::endl;
+          std::string to = m.getTo();
+          std::string from = m.getFrom();
+          std::string content = m.getContent();
+          if (github_id.compare(to) == 0 && m.getType() != 0) {
+            std::cout << from << ":" << content << std::endl;
+          } else {
+            if (github_id.compare(from) == 0 && m.getType() == 0) {
+              TCP_Client clnt(list[to], NODE_PORT);
+              clnt.connect();
+              clnt.send_file(content);
+              clnt.close();
+            } else {
+              // illegal packet
+            }
+          }
+        }
+      }
     }
 
-		//delete css;
 
 	}
   server.close();

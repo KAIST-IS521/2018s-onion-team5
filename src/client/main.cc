@@ -14,13 +14,16 @@
 
 #include "../common/util.h"
 #include "../common/dumphex.h"
-
+#include "../common/tcp_server.h"
+#include "../common/config.h"
 #include "fetch_key.h"
 #include "listen.h"
 #include "udp_client.h"
 #include "gpg_wrapper.h"
 #include "message_wrapper.h"
 #include "yang_crypto.h"
+#include "messenger.h"
+
 
 void adver_loop(std::string name) {
   while (true) {
@@ -29,273 +32,144 @@ void adver_loop(std::string name) {
   }
 }
 
-int main(int argc, char *argv[]) {
-  GPG gpg;
+bool send_message(std::string to, std::string content, Messenger &msgr) {
+  std::map<std::string, std::string> node_list = msgr.get_node_list();
+  GPG &g = msgr.getGPG();
+  std::vector<std::string> route = generate_path(node_list, msgr.get_name(), to);
+  for (auto it: route)
+    DumpHex(it);
 
-  std::string name;
-  std::string passphrase;
-
-  std::map<std::string, std::string> node_list;
-
-  std::cout << "Put your private key id: ";
-  std::getline(std::cin, name);
-
-  //char passphrase[PASS_MAX];
-  passphrase = getpass("Put your passphrase: ");
-
-  if (!gpg.verify_passphrase(name, passphrase)) {
-    std::cout << "Fail to verify passphrase" << std::endl;;
-    return 1;
-  }
-
-  std::cout << "Loggined" << std::endl;
-
-  std::string input;
-
-  std::thread thread_listener(listener, name, std::ref(node_list));
-  std::thread thread_advertise(adver_loop, name);
-  //std::thread thread_input(adver_loop, name);
-
-  thread_listener.join();
-  thread_advertise.join();
-
-  exit(1);
-
-/*
   std::string filename;
 
-  std::string from;
-  from = "TestUser2";
+  std::string str_from = route[0];
+  std::string str_to = route[route.size() - 1];
+  std::string str_next = route[1];
+  route.pop_back();
 
-  std::string to;
-  to = "TestUser5";
+/*
+  {
+    Message m;
+    m.setFrom(str_from);
+    m.setTo(str_to);
+    m.setContent(content);
+    filename = m.serialize();
+  }
 
   {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser2", "xptmxmdl");
-
-    std::vector<std::string> route;
-
-    route.push_back(from); // humm,
-
-    route.push_back("TestUser1");
-    route.push_back("TestUser3");
-    route.push_back("TestUser4");
-
-    {
-      Message m;
-      m.setFrom(from);
-      m.setTo(to);
-      m.setContent("HELL oWorld!");
-      //m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
-
-      filename = m.serialize();
-    }
-
+    Message m;
     std::string from2;
     std::string to2;
     std::string filename2;
-    Message m2;
+    from2 = str_to;
 
-    from2 = to;
+    int size = path.size();
 
-    int size = route.size();
-    for (int i = 0; i < size; ++i){
+    for (int i = 0; i < size; ++i) {
       to2 = from2;
-      from2 = route.back();
-      route.pop_back();
+      from2 = path.back();
+      path.pop_back();
 
-  #if 1
-      gpg.encrypt_file(filename, to2, filename2);
-  #else
-      filename2 = filename;
-  #endif
-      filename = filename2;
-      if (from2.compare(from) == 0) {
-        break;
+
+      if (g.encrypt_file(filename, to2, filename2) == false) {
+
+        return false;
       }
 
-      m2.setFrom(from2);
-      m2.setTo(to2);
-      m2.setBinary(filename2);
-      filename = m2.serialize();
-      m2.clear();
+      m.setFrom(from2);
+      m.setTo(to2);
+      m.setBinary(filename2);
+      filename = m.serialize();
+      m.clear();
     }
   }
-
-
-//  std::string xxx = "xxd " + filename;
-//  system(xxx.c_str());
-
-  if (false) {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
-
-    Message m;
-    if (!m.deserialize(filename)) {
-      std::cout << "Fail to deserialize" << std::endl;
-      goto END_RELAY;
-    }
-
-    //(from.compare(m.getFrom()) == 0);
-    if (to.compare(m.getTo()) == 0 && m.getType() != 0) {
-      std::cout << "Oh, it's for me??" << std::endl;
-    }
-
-    END_RELAY:
-    ;
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser3", "xptmxmtka");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser4", "xptmxmtk");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser5", "xptmxmdh");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-
-    if (m.getType() == 1) {
-      std::cout << m.getContent() << std::endl;
-      std::string x;
-      x = "xxd " + m.getContent();
-      system(x.c_str());
-    } else if (m.getType() == 2) {
-      std::cout << 2 << ": "<< m.getContent() << std::endl;
-    }
-  }
-
-  std::string x;
-  x = "rm /tmp/????????????????";
-  system(x.c_str());
-
-
-  system("echo asdfasdfasdfasdfasdfasdf > /tmp/input");
-
-  std::vector<std::string> routepath;
-  routepath.push_back("TestUser2");
-  routepath.push_back("TestUser1");
-  routepath.push_back("TestUser3");
-  routepath.push_back("TestUser4");
-  routepath.push_back("TestUser5");
-
-  std::string filepath;
-  filepath = enc("/tmp/input", routepath);
-
-  std::cout << filepath << std::endl;
-
-  std::string cmd = "xxd " + filepath;
-  system(cmd.c_str());
-
-  routepath.clear();
-
-  int ret;
-  std::string output;
-  std::string to;
-
-
-  std::vector<std::vector<std::string>> gpg_info;
-  gpg_info.push_back(std::vector<std::string> {"TestUser1", "xptmxmdlf"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser3", "xptmxmtka"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser4", "xptmxmtk"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser5", "xptmxmdh"});
-
-  for (auto it = gpg_info.begin(); it != gpg_info.end(); ++it){
-
-    ret = dec(filepath, (*it)[0], (*it)[1], output, to);
-    if (ret == 1) {
-      std::cout << "Oh! It's for me!" << std::endl;
-      // put message to ui
-      // to do this thing we have to know from
-      //  ???, ???: message
-      std::cout << "File:" << output << std::endl;
-      std::string cmd = "xxd " + output;
-      system(cmd.c_str());
-    } else if (ret == 0) {
-      std::cout << "This is not mine... send to " << to << std::endl;
-      // relay to other
-      filepath = output;
-    } else if (ret == -1) {
-      std::cout << "Weired packet... " << std::endl;
-      std::cout << "STOP" << std::endl;
-      // drop
-      exit(1);
-    } else {
-      std::cout << "WHATTHEFUCK" << std::endl;
-      std::cout << "STOP" << std::endl;
-      // drop
-      exit(1);
-    }
-  }
-
-
-
-
-
-  std::cout << "DONE" << std::endl;
-  system("rm /tmp/input");
 */
+
+{
+    Message m;
+    m.setFrom(str_from);
+    m.setTo(str_to);
+    m.setContent(content);
+
+    filename = m.serialize();
+  }
+
+  std::string from2;
+  std::string to2;
+  std::string filename2;
+  Message m2;
+
+  from2 = to;
+
+  int size = route.size();
+  for (int i = 0; i < size; ++i){
+    to2 = from2;
+    from2 = route.back();
+    route.pop_back();
+
+#if 1
+    g.encrypt_file(filename, to2, filename2);
+#else
+    filename2 = filename;
+#endif
+    filename = filename2;
+
+    m2.setFrom(from2);
+    m2.setTo(to2);
+    m2.setBinary(filename2);
+    filename = m2.serialize();
+    m2.clear();
+  }
+
+  std::string xxxx;
+read_file(filename, xxxx);
+  DumpHex(xxxx);
+
+  TCP_Client clnt(node_list[str_next], NODE_PORT);
+  clnt.connect();
+  clnt.send_file(filename);
+  clnt.close();
+
+  return true;
+}
+
+void input_loop(Messenger &msgr) {
+  std::map<std::string, std::string> &node_list = msgr.get_node_list();
+  while (true) {
+    std::string user;
+    std::cout << " > ";
+    std::getline(std::cin, user);
+    if (node_list.find(user) == node_list.end()) {
+      std::cout << "No such user" << std::endl;
+      continue;
+    }
+
+    std::string message;
+    std::cout << " " << user << " > ";
+    std::getline(std::cin, message);
+
+    if (send_message(user, message, msgr)) {
+      std::cout << "[!] Success to send" << std::endl;
+    } else {
+      std::cout << "[!] Fail to send" << std::endl;
+    }
+  }
+}
+
+int main(int argc, char *argv[]) {
+  Messenger msgr;
+
+  if (msgr.interact_cred() == false) {
+    return 1;
+  }
+  std::cout << "Loggined" << std::endl;
+
+  std::thread thread_liste(liste_loop, std::ref(msgr));
+  std::thread thread_adver(adver_loop, msgr.get_name());
+  std::thread thread_input(input_loop, std::ref(msgr));
+
+  thread_liste.join();
+  thread_adver.join();
+  thread_input.join();
+
   return 0;
 }

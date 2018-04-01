@@ -1,6 +1,4 @@
 #pragma once
 
-#include <string>
-#include <map>
-
-void listener(std::string github_id, std::map<std::string, std::string> &list);
+#include "messenger.h"
+void liste_loop(Messenger &msgr);
