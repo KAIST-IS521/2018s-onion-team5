@@ -1,23 +1,27 @@
 #pragma once
 
+#include <string>
+#include <netinet/in.h>
+
 class TCP_Client {
   bool client;
 
+  std::string host;
+  int port;
+
   int client_sock;
   struct sockaddr_in client_sockaddr;
+
+  int write(void *ptr, int len);
+  int read(void *ptr, int len);
+
 public:
-  Client_sock();
-  Client_sock(int sock, struct sockaddr_in sockaddr);
-  ~Client_sock();
+  TCP_Client(std::string host, int port);
+  TCP_Client(int sock, struct sockaddr_in sockaddr);
+  ~TCP_Client();
 
-  bool connect(std::string host, int port);
-
-  int send() {
-
-  }
-
-  int recv();
-
-
+  bool connect();
+  int send(std::string data);
+  int recv(std::string &data);
   void close();
-}
+};

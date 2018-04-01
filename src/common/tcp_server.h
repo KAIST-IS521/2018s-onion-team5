@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+//#include <sys/socket.h>
+#include <netinet/in.h>
+
 #include "tcp_client.h"
 
 class TCP_Server {
@@ -9,12 +12,13 @@ class TCP_Server {
 
   int sock;
   struct sockaddr_in server_sockaddr;
+
 public:
   TCP_Server(std::string host, int port);
   ~TCP_Server();
   bool bind();
   bool listen();
   bool listen(int backlog);
-  TCP_Client accept();
+  TCP_Client * accept();
   void close();
-}
+};
