@@ -25,6 +25,12 @@ TCP_Server::~TCP_Server() {
 }
 
 bool TCP_Server::bind() {
+  int flag = 1;
+  if (::setsockopt(this->sock, SOL_SOCKET,  SO_REUSEADDR,  &flag, sizeof(int)) != 0) {
+    perror("setsockopt");
+    return false;
+  }
+
   if (::bind(
     this->sock,
     (struct sockaddr *) &this->server_sockaddr,

@@ -43,8 +43,9 @@ int TCP_Client::write(void *ptr, int len) {
 }
 
 int TCP_Client::read(void *ptr, int len) {
-  if (::read(this->client_sock, ptr, len) == len) {
-    return len;
+  int size;
+  if ((size = ::read(this->client_sock, ptr, len)) >= 0) {
+    return size;
   } else {
     ::perror("write");
     return -1;
@@ -77,7 +78,10 @@ int TCP_Client::send(std::string data) {
   const char *ptr = data.c_str();
   int offset = 0;
   while (offset < payload_size) {
-    int written_bytes = this->write((void *) (ptr + offset), BUFSIZ);
+    int length = BUFSIZ < (payload_size - offset)? BUFSIZ: (payload_size - offset);
+    printf("length %d \n", length);
+    int written_bytes = this->write((void *) (ptr + offset), length);
+    printf("written_bytes %d \n", written_bytes);
     if (written_bytes == -1) {
       // Error occured
       break;
@@ -106,9 +110,11 @@ int TCP_Client::recv(std::string &data) {
   size_t payload_size = BSWAP64(temp);
   int offset = 0;
   char buff[BUFSIZ + 1];
+  printf("payload_size: %d\n", payload_size);
   while (offset < payload_size) {
     ::memset(buff, 0, BUFSIZ + 1);
     int read_bytes = this->read(buff, BUFSIZ);
+
     if (read_bytes == -1) {
       // Error occured
       break;
@@ -116,6 +122,7 @@ int TCP_Client::recv(std::string &data) {
     retval.append(buff, read_bytes);
     offset += read_bytes;
   }
+  printf("offset: %d\n", offset);
 
   data = retval;
   return offset;
