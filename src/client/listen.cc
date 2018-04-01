@@ -11,34 +11,58 @@
 
 
 void listener(std::string github_id, std::map<std::string, std::string> &list) {
-  psocksxx::tcpnsockstream ss;
-  psocksxx::nsockaddr naddr("0.0.0.0", "9099");
+  int sock;
+	struct sockaddr_in servAddr;
+  int servPort = 9099;
 
-  try {
-    ss.bind(&naddr, true);
-  } catch(psocksxx::sockexception &e) {
-    std::cerr << "[server] failed to bind to socket, exception: " << e.what() << std::endl;
-    return;
-  }
+	// socket
+	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-  try {
-    ss.listen();
-  } catch(psocksxx::sockexception &e) {
-    std::cerr << "[server] failed to listen on socket, exception: " << e.what() << std::endl;
-    return;
-  }
+	memset(&servAddr, 0, sizeof(servAddr));
+	servAddr.sin_family = AF_INET;
+	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servAddr.sin_port = htons(servPort);
 
-  psocksxx::nsockstream * css;
+	// BINDING
+	bind(sock, (struct sockaddr *) &servAddr, sizeof(servAddr));
+
+	// LISTEN
+	listen(sock, 100);
 
   std::cout << "LISTEN 9099" << std::endl;
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
 	for (;;) {
-    std::string msg;
+    int clnt;
+		struct sockaddr_in clntAddr;
+		int len = sizeof(clntAddr);
+		char client_ip[32];
+		int clinet_port;
 
-		css = ss.accept();
+    clnt = accept(sock, (struct sockaddr * ) &clntAddr, (socklen_t *)&len);
     std::cout << "ACCEPT" << std::endl;
 
-		(* css) >> msg;
+    //std::string buf;
+    //buf.resize(4096);
+    char buf[4096 + 1];
+    memset(buf, 0, 4096 + 1);
+    int bufLen = 0;
+		//int size = (* css).tellg();
+
+    puts("asdf");
+    if ((bufLen = recv(sock, buf, 4096, 0)) < 0) {
+      // error handling
+    }
+    puts("asdf");
+
+    DumpHex(buf, bufLen);
+
+    std::string msg;
+    msg.assign(buf, bufLen);
     DumpHex(msg);
+    puts("asdf");
+
+
+    std::cout << msg.size() << std::endl;
     std::cout << "GET" << std::endl;
 
     // node list
@@ -48,6 +72,13 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         Onion5::NodeList node_list;
         msg = msg.substr(2, len - 4);
         node_list.ParseFromString(msg);
+        list.clear();
+        for (int i = 0; i < node_list.nodes_size(); ++i) {
+          const Onion5::Node& node = node_list.nodes(i);
+          std::cout << node.github_id() << std::endl;
+          std::cout << node.ip_addr() << std::endl;
+          list.insert (std::pair<std::string, std::string>(node.github_id(), node.ip_addr()));
+        }
       }
     }
     // health check
@@ -71,7 +102,13 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         msg = PONG_PREFIX + msg + PONG_POSTFIX;
         DumpHex(msg);
 
-        (*css) << msg;
+        int bufLen = msg.size();
+
+        //(*css) << msg;
+        if (send(sock, &msg[0], bufLen, 0) != bufLen)
+        {
+          // error handling
+        }
       }
     }
     // encrypted packet
@@ -80,7 +117,7 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
 
     }
 
-		delete css;
+		//delete css;
 	}
-
+  google::protobuf::ShutdownProtobufLibrary();
 }

@@ -34,6 +34,7 @@ void health_server() {
 
       psocksxx::tcpnsockstream ss;
       try {
+        ss.timeout(3, 0);
         ss.connect(ip_addr.c_str(), NODE_PORT);
         flag = true;
       } catch ( psocksxx::sockexception &e ) {

@@ -27,7 +27,11 @@ void send_list(std::string& host) {
 
   psocksxx::tcpnsockstream ss;
   ss.connect(host.c_str(), NODE_PORT);
-  ss << LIST_PREFIX << content << LIST_POSTFIX;
+  std::string buff;
+  buff += LIST_PREFIX;
+  buff += content;
+  buff += LIST_POSTFIX;
+  ss << buff;
 }
 
 void boradcast_listener() {
