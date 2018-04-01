@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "ui_receiver.hpp"
 //Test
 
 UI::UI(){}
@@ -218,7 +217,12 @@ int UI::chat_room(int x, int selected_item) {
 				}
 				else {
 					i--;
+					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * (i/40), " ");
+					message[i] = 0;
 					delch();
+					wmove(chat[3], (i + 2)/40, (i+2) - 40 * (i/40));
+					wnoutrefresh(chat[3]);
+					doupdate();
 					if(i != 0){
 						i--;
 						continue;
