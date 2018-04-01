@@ -77,6 +77,9 @@ std::string pack_total(std::string str1, std::string str2, int sel) {
 	return pkt;
 }
 
+//TODO: nodelist
+//Nodelist nodelist;
+
 /**
  * A struct for client specific data, also includes pointer to create
  * a list of clients.
