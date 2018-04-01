@@ -53,6 +53,7 @@
 /* Port to listen on. */
 #define SERVER_PORT 5555
 #define SERVER_PORT2 5556
+#define SERVER_PORT3 9090
 #define char_len 5
 
 std::string pack_total(std::string str1, std::string str2, int sel) {
@@ -127,6 +128,34 @@ buffered_on_read(struct bufferevent *bev, void *arg)
 }
 
 void
+buffered_on_read_server(struct bufferevent *bev, void *arg)
+{
+	struct client *client = (struct client *)arg;
+	//TODO: 
+	//server가 nodelist msg보내주면 파싱해서 전역변수 nodelist에 저장.
+	//그리고 msg를 UI한테도 넘겨줘야하므로, msg를 그대로 client->fd_ui에 write.
+	//ex) write(client->fd_ui, buffer, sizeof(buffer));
+
+	/* 참고예제.
+	int n = -1;
+	char tmp[1024] = {0, };
+	while (1) {
+		n = bufferevent_read(bev, tmp, sizeof(tmp));
+		if (n <= 0)
+			break;
+		fwrite(tmp, sizeof(char), n, client->fp);
+	}
+	*/
+	bufferevent_write_buffer(bev, bev->input);	
+}
+
+void
+buffered_on_write_server(struct bufferevent *bev, void *arg)
+{
+	//여기서는 구현하지 않음. 비워둘것.
+}
+
+void
 buffered_on_read_empty(struct bufferevent *bev, void *arg)
 {
 	printf("read emtpy\n");
@@ -142,25 +171,34 @@ buffered_on_write_empty(struct bufferevent *bev, void *arg)
 void
 buffered_on_read_ui(struct bufferevent *bev, void *arg)
 {
-	printf("buffered_on_read_ui\n");
+	//printf("buffered_on_read_ui\n");
 	struct client *client = (struct client *)arg;
 	int n = -1;
 	char tmp[1024] = {0, };
 	char write_buff[1024] = {0, };
 	unsigned char check, len1, len2;
 	std::string str1, str2, input_file_name;
-	std::string recv;
-	
-	char temp_file_name[char_len] = {0, };
 	FILE *fp = NULL;
 
 	while (1) {
 		n = bufferevent_read(bev, tmp, sizeof(tmp));
 		if (n <= 0)
 			break;
-		recv = tmp;
+		//recv = tmp;
+		std::string recv(tmp);
 		//TODO 메세지가 중간에 끊겨서 들어오면 버그.
 		while(!recv.empty()) {
+			char temp_file_name[char_len] = {0, };
+			int fd = -1;
+			struct sockaddr_in serveraddr;
+			int client_len;
+
+			//TODO 테스트 변수
+			std::vector<std::string> vec_out;
+			std::string next_dest_ip = "143.248.231.97";
+			std::string output_file = "zpzpzpzp";
+//vector<string> = randomizer(Nodelist nodelist,std::string my_github_id, std::string final_github_id);
+
 			check = recv[0];
 			len1 = recv[1];
 			str1 = recv.substr(2, len1);
@@ -168,6 +206,14 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 			str2 = recv.substr(len1 + 3, len2);
 
 			if (check == '0') {
+				/*// 테스트
+				std::cout << "TXT" <<std::endl;
+				std::cout << (int)len1 <<std::endl;
+				std::cout << str1 <<std::endl;
+				std::cout << (int)len2 <<std::endl;
+				std::cout << str2 <<std::endl;
+				*/
+				/*
 				// string msg
 				do {
 					rand_string(temp_file_name, char_len);
@@ -179,15 +225,44 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 					perror("fopen");
 
 				fwrite(write_buff, sizeof(char), str2.size(), fp);
-				memset(write_buff, 0, 1024);
 				fclose(fp);
+				memset(write_buff, 0, 1024);
 
 				input_file_name = temp_file_name;
+				//vec_out = randomizer(nodelist, client->github_id, str1);
+				//output_file = enc(input_file_name, client->passphrase, vec_out);
+
+				if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+					perror("socket");
+
+				serveraddr.sin_family = AF_INET;
+				serveraddr.sin_addr.s_addr = inet_addr(next_dest_ip.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환 전역변수 nodelist에서 ip 빼오기.
+				serveraddr.sin_port = htons(SERVER_PORT);
+				client_len = sizeof(serveraddr);
+
+				if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+					perror("connect error :");
+
+				fp = fopen(output_file.c_str(),"rb");
+				if (!fp)
+					perror("fopen");
+				n = -1;
+				while (feof(fp) == 0) {
+					n = fread(write_buff, sizeof(char), 1024, fp);    // 1바이트씩 4번(4바이트) 읽기
+					write(fd, write_buff, n);
+					memset(write_buff, 0, 1024);                          // 버퍼를 0으로 초기화
+				}
+				fclose(fp);
+				close(fd);
+				//remove(input_file_name); //TODO 인크립트에 넣으려고 만든 템프파일 지우기
+				//remove(output_file_name); //TODO 인크립트에 넣으려고 만든 템프파일 지우기
+				
 				//TODO:
 				//파일 연다, str2 메세지 저장, 파일 닫는다, enc에 파일 넣는다. 암호 넣는다.type 입력한다.
 				//str1이 마지막 데스티네이션, 내가 첫번째가 되도록 vector를 만든다.
 				// 위 vector에서 두번째, github_id의 ip주소를 구해서 connect한다. wrtie한다.
 				//input_file_name 삭제
+				*/
 
 				/*
 				std::string output_file_name = 
@@ -195,12 +270,46 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 							std::string passphrase,
 							Nodelist nodelist,
 							int type);
-				*/
-																	
+				*/													
 				
 			}
 			else if (check == '1') {
+				/*// 테스트
+				std::cout << "FILE" <<std::endl;
+				std::cout << (int)len1 <<std::endl;
+				std::cout << str1 <<std::endl;
+				std::cout << (int)len2 <<std::endl;
+				std::cout << str2 <<std::endl;
+				*/
 				// FILE
+				/*
+
+				//vec_out = randomizer(nodelist, client->github_id, str1);
+				//output_file = enc(str2, client->passphrase, vec_out);
+
+				if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+					perror("socket");
+
+				serveraddr.sin_family = AF_INET;
+				serveraddr.sin_addr.s_addr = inet_addr(next_dest_ip.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환 전역변수 nodelist에서 ip 빼오기.
+				serveraddr.sin_port = htons(SERVER_PORT);
+				client_len = sizeof(serveraddr);
+
+				if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+					perror("connect error :");
+
+				fp = fopen(output_file.c_str(),"rb");
+				if (!fp)
+					perror("fopen");
+				n = -1;
+				while (feof(fp) == 0) {
+					n = fread(write_buff, sizeof(char), 1024, fp);    // 1바이트씩 4번(4바이트) 읽기
+					write(fd, write_buff, n);
+					memset(write_buff, 0, 1024);                          // 버퍼를 0으로 초기화
+				}
+				fclose(fp);
+				close(fd);
+				*/
 
 				//TODO:
 				//str2 메세지 저장. enc에 str2 파일 경로 넣는다. 암호 넣는다. type 입력한다.
@@ -209,22 +318,7 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 				//파일 삭제 하지 않음.
 				
 			}
-			/* TODO: 안해도됨. 프로그램 시작하자마자 받음.
-			else if (check == '3') {
-				//ID + PASSPHRASE
-
-				//UI로부터 ID, PASSPHRASE받고 올바르면 client->github_id, client->passphrase에 저장.
-				//틀리면 exit(-1);
-				//gpg verify 함수 필요.
-
-			}
-			*/
-			else if (check == '4') {
-				//NODE LIST
-
-				//TODO:
-				//msg 받아서 nodelist로 파싱 후 전역 변수 nodelist에 덮어씌움.
-			}
+			recv.erase(0, 3 + len1 + len2);
 		}
 	}
 }
@@ -257,6 +351,24 @@ void
 buffered_on_write_ui(struct bufferevent *bev, void *arg)
 {
 	printf("buffered_on_write_ui\n");
+}
+
+void
+buffered_on_error_server(struct bufferevent *bev, short what, void *arg)
+{
+  struct client *client = (struct client *)arg;
+
+  if (what & EVBUFFER_EOF) {
+    /* Client disconnected, remove the read event and the
+     * free the client structure. */
+    printf("Client disconnected.\n");
+  }
+  else {
+    warn("Client socket error, disconnecting.\n");
+  }
+  bufferevent_free(client->buf_ev);
+  close(client->fd);
+  //free(client);
 }
 
 void
@@ -319,7 +431,7 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 			if ((client->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 				perror("socket");
 			serveraddr.sin_family = AF_INET;
-			serveraddr.sin_addr.s_addr = inet_addr(next_dest_ip.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환
+			serveraddr.sin_addr.s_addr = inet_addr(next_dest_ip.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환 전역변수 nodelist에서 ip 빼오기.
 			serveraddr.sin_port = htons(SERVER_PORT);
 			client_len = sizeof(serveraddr);
 			/*
@@ -501,12 +613,7 @@ on_accept(int fd, short ev, void *arg)
 	client->fd_ui = ((struct client *)arg)->fd_ui;
 	client->fd = client_fd;
 	printf("[on_accept] fd_ui:%d, fd:%d\n", client->fd_ui, client->fd);
-	/*	
-	if (arg) {
-		printf("free, client_relay\n");
-		free(arg);
-	}
-	*/
+
 	do {
 		rand_string(client->file_name, char_len);
 		printf("f_name: %s\n",client->file_name);
@@ -516,29 +623,6 @@ on_accept(int fd, short ev, void *arg)
 	if (!(client->fp))
 		perror("fopen");
 
-	/* Create the buffered event.
-	 *
-	 * The first argument is the file descriptor that will trigger
-	 * the events, in this case the clients socket.
-	 *
-	 * The second argument is the callback that will be called
-	 * when data has been read from the socket and is available to
-	 * the application.
-	 *
-	 * The third argument is a callback to a function that will be
-	 * called when the write buffer has reached a low watermark.
-	 * That usually means that when the write buffer is 0 length,
-	 * this callback will be called.  It must be defined, but you
-	 * don't actually have to do anything in this callback.
-	 *
-	 * The fourth argument is a callback that will be called when
-	 * there is a socket error.  This is where you will detect
-	 * that the client disconnected or other socket errors.
-	 *
-	 * The fifth and final argument is to store an argument in
-	 * that will be passed to the callbacks.  We store the client
-	 * object here.
-	 */
 	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_hj,
 			buffered_on_write, buffered_on_error_hj, client);
 
@@ -546,19 +630,57 @@ on_accept(int fd, short ev, void *arg)
 	 * called. */
 	bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
 
-	printf("[Relay] Accepted connection from %s\n", 
+	printf("[on_accept_Relay] Accepted connection from %s\n", 
+			inet_ntoa(client_addr.sin_addr));
+}
+
+void
+on_accept2(int fd, short ev, void *arg)
+{
+	int client_fd;
+	struct sockaddr_in client_addr;
+	socklen_t client_len = sizeof(client_addr);
+	struct client *client;
+
+	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
+	if (client_fd < 0) {
+		warn("accept failed");
+		return;
+	}
+
+	/* Set the client socket to non-blocking mode. */
+	if (setnonblock(client_fd) < 0)
+		warn("failed to set client socket non-blocking");
+
+	/* We've accepted a new client, create a client object. */
+	client = (struct client *)calloc(1, sizeof(*client));
+	if (client == NULL)
+		err(1, "malloc failed");
+	client->fd_ui = ((struct client *)arg)->fd_ui;
+	client->fd = client_fd;
+	printf("[on_accept_server] fd_ui:%d, fd:%d\n", client->fd_ui, client->fd);
+
+	client->buf_ev = bufferevent_new(client_fd, buffered_on_read_server,
+			buffered_on_write_server, buffered_on_error_server, client);
+
+	/* We have to enable it before our callbacks will be
+	 * called. */
+	bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE);
+
+	printf("[on_accept_SERVER] Accepted connection from %s\n", 
 			inet_ntoa(client_addr.sin_addr));
 }
 
 void relay()
 {
-	int listen_fd, listen_fd2;
-	struct sockaddr_in listen_addr, listen_addr2;
-	struct event ev_accept;
-	int reuseaddr_on, reuseaddr_on2;
+	int listen_fd, listen_fd2, listen_fd3;
+	struct sockaddr_in listen_addr, listen_addr2, listen_addr3;
+	struct event ev_accept, ev_accept2;
+	int reuseaddr_on, reuseaddr_on2, reuseaddr_on3;
 	socklen_t client_len2;
 	struct client *client_ui;
 	struct client *client_relay;
+	struct client *client_server;
 	char id_pw_buff[300] = {0, };
 
 	srand(time(NULL));
@@ -577,6 +699,12 @@ void relay()
 	if (listen_fd2 < 0)
 		err(1, "listen2 failed");
 	memset(&listen_addr2, 0, sizeof(listen_addr2));
+	
+	/* Create our listening socket2. */
+	listen_fd3 = socket(AF_INET, SOCK_STREAM, 0);
+	if (listen_fd3 < 0)
+		err(1, "listen3 failed");
+	memset(&listen_addr3, 0, sizeof(listen_addr3));
 
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_addr.s_addr = INADDR_ANY;
@@ -586,6 +714,10 @@ void relay()
 	listen_addr2.sin_addr.s_addr = INADDR_ANY;
 	listen_addr2.sin_port = htons(SERVER_PORT2);
 	client_len2 = sizeof(listen_addr2);
+	
+	listen_addr3.sin_family = AF_INET;
+	listen_addr3.sin_addr.s_addr = INADDR_ANY;
+	listen_addr3.sin_port = htons(SERVER_PORT3);
 
 	//1
 	if (bind(listen_fd, (struct sockaddr *)&listen_addr,
@@ -602,6 +734,21 @@ void relay()
 	if (setnonblock(listen_fd) < 0)
 		err(1, "failed to set server socket to non-blocking");
 	
+	//3
+	if (bind(listen_fd3, (struct sockaddr *)&listen_addr3,
+		sizeof(listen_addr3)) < 0)
+		err(1, "bind3 failed");
+	if (listen(listen_fd3, 5) < 0)
+		err(1, "listen3 failed");
+	reuseaddr_on3 = 1;
+	setsockopt(listen_fd3, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on3, 
+	    sizeof(reuseaddr_on3));
+
+	/* Set the socket to non-blocking, this is essential in event
+	 * based programming with libevent. */
+	if (setnonblock(listen_fd3) < 0)
+		err(1, "failed to set server socket to non-blocking 333333333333333333333");
+	
 	//2
 	client_ui = (struct client *)calloc(1, sizeof(*client_ui));
 	if (client_ui == NULL)
@@ -609,6 +756,10 @@ void relay()
 	
 	client_relay = (struct client *)calloc(1, sizeof(*client_relay));
 	if (client_relay == NULL)
+		err(1, "malloc failed");
+	
+	client_server = (struct client *)calloc(1, sizeof(*client_server));
+	if (client_server == NULL)
 		err(1, "malloc failed");
 
 	if (bind(listen_fd2, (struct sockaddr *)&listen_addr2,
@@ -622,18 +773,41 @@ void relay()
 	
 	client_ui->fd_ui = accept(listen_fd2, (struct sockaddr *)&listen_addr2, &client_len2);
 	client_relay->fd_ui = client_ui->fd_ui;
+	client_server->fd_ui = client_ui->fd_ui;
 
 	//UI와 소켓 연결 맺고, UI에서 아디, 비번 치기전까지 블록.
 	read(client_ui->fd_ui, id_pw_buff, 300);
+
+	/* TODO: 잠시 주석.
+	unsigned char check, len1, len2;
+	std::string str1, str2;
+	std::string recv(id_pw_buff);
+
+	check = recv[0];
+	len1 = recv[1];
+	str1 = recv.substr(2, len1);
+	len2 = recv[2 + len1];
+	str2 = recv.substr(len1 + 3, len2);
+	*/
+
+	/* 테스트용
+	if (check == '3') {
+		std::cout << str1 <<std::endl;
+		std::cout << str2 <<std::endl;
+	}
+	*/
 	//TODO:
 	//id_pw_buff 파싱해서, 아이디 비번 도출 후 gpg_verify에 집어넣고 맞는지 검증
 	//맞으면 client_ui->github_id, client_ui->passphrase에 집어넣음. 틀리면 exit(-1);
 
+	//TODO 쓰레드 사용해서 advise(str1) 날리기.
 
-	//TODO:
+	//TODO 9090포트 열어서 accept하자. on_accept 똑같이 하면됨.
+	//TODO[박정환]:
 	//listner 구현??
 	//listner(client_ui->github_id, ?, ?);
 	//내 생각: 서버에게 connect 보내서 소켓 열고, 이벤트 등록해서 논블록킹으로 구동.
+	// client_server->fd_ui = client_ui->fd_ui;
 
 
 	/* Set the socket to non-blocking, this is essential in event
@@ -654,6 +828,8 @@ void relay()
 	 * be notified when a client connects. */
 	event_set(&ev_accept, listen_fd, EV_READ|EV_PERSIST, on_accept, client_relay);
 	event_add(&ev_accept, NULL);
+	event_set(&ev_accept2, listen_fd3, EV_READ|EV_PERSIST, on_accept2, client_server);
+	event_add(&ev_accept2, NULL);
 
 	/* Start the event loop. */
 	event_dispatch();
