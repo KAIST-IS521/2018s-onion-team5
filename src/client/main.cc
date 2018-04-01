@@ -1,301 +1,481 @@
-#include <iostream>
-#include <string>
+#include <ncurses.h>
 #include <map>
-#include <string>
-#include <vector>
-#include <thread>
-
 #include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/wait.h>
+#include <thread>
+#include "ui.hpp"
+#include <sys/socket.h>
+#include <cstdio>
+#include <arpa/inet.h>
+#include <mutex>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <cstdlib>
+#include <cstring>
+#include "relay3.cpp"
 
-#include <time.h>
+#define ESCAPE 27
+#define ENTER 10
 
-#include "../common/util.h"
-#include "../common/dumphex.h"
+std::string USER;
+std::vector<std::string> userlist;
+std::vector<std::string> newmsg;
+std::map<std::string, std::vector<std::string> > hist;
+int fd;
+std::mutex mtx;
 
-#include "fetch_key.h"
-#include "listen.h"
-#include "udp_client.h"
-#include "gpg_wrapper.h"
-#include "message_wrapper.h"
-#include "yang_crypto.h"
+//this can be deleted
+void init_testset() {
 
-void adver_loop(std::string name) {
-  while (true) {
-    advertise(name);
-    sleep(5);
-  }
+	userlist.push_back("");
+	userlist.push_back("TestUser1");
+	userlist.push_back("TestUser2");
+	userlist.push_back("TestUser3");
+	userlist.push_back("TestUser4");
+	userlist.push_back("hojoon");
+	userlist.push_back("Ahnmo");
 }
 
-int main(int argc, char *argv[]) {
-  GPG gpg;
+void hist_map()
+{
+	//init_testset can be deleted
+	init_testset();
+	for(int i = 0; i < userlist.size(); i++)
+	{
+		std::vector<std::string> history;
+		hist[userlist[i]] = history;
+	}
 
-  std::string name;
-  std::string passphrase;
+}
 
-  std::map<std::string, std::string> node_list;
+void init_scr() {
 
-  std::cout << "Put your private key id: ";
-  std::getline(std::cin, name);
+	initscr();
+	start_color();
+	init_pair(1, COLOR_WHITE, COLOR_BLACK);
+	init_pair(2, COLOR_WHITE, COLOR_BLUE);
+	init_pair(3, COLOR_BLACK, COLOR_YELLOW);
+	init_pair(4, COLOR_BLACK, COLOR_WHITE); 
+	curs_set(2);
+	bkgd(COLOR_PAIR(1));
+	keypad(stdscr, TRUE);
+}
 
-  //char passphrase[PASS_MAX];
-  passphrase = getpass("Put your passphrase: ");
+int check_quit(int x)
+{
+    WINDOW * check;
+    int key;
+    check = newwin(3, 40, 3, x/2 - 20);
+    wmove(check, 1, 2);
+    wprintw(check, "Exit program (y/N) ? "); 
+    wbkgd(check, COLOR_PAIR(2));
+    box(check, 0, 0);
+    refresh();
+    key = wgetch(check);
+    delwin(check);
+    if (key == 'y')
+        return -1;
+    else
+        return 0;
+}
 
-  if (!gpg.verify_passphrase(name, passphrase)) {
-    std::cout << "Fail to verify passphrase" << std::endl;;
-    return 1;
-  }
 
-  std::cout << "Loggined" << std::endl;
+WINDOW ** test_list(int start_col, int len)
+{
+    int i;
+    WINDOW **items;
 
-  std::string input;
+    items = new WINDOW * [len];
+    items[0]=newwin(20, 40, 5, start_col);
+    wbkgd(items[0], COLOR_PAIR(3));
+    box(items[0], ACS_VLINE, ACS_HLINE);
+    for (i =1; i < len; i++){
+    	items[i] = subwin(items[0], 1, 17, 5 + i, start_col + 1);
+        wprintw(items[i], "%s", userlist[i].c_str());
+    }
+    wbkgd(items[1], COLOR_PAIR(2));
+    wrefresh(items[0]);
+    return items;
+}
 
-  std::thread thread_listener(listener, name, std::ref(node_list));
-  std::thread thread_advertise(adver_loop, name);
-  //std::thread thread_input(adver_loop, name);
-
-  thread_listener.join();
-  thread_advertise.join();
-
-  exit(1);
-
-/*
-  std::string filename;
-
-  std::string from;
-  from = "TestUser2";
-
-  std::string to;
-  to = "TestUser5";
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser2", "xptmxmdl");
-
-    std::vector<std::string> route;
-
-    route.push_back(from); // humm,
-
-    route.push_back("TestUser1");
-    route.push_back("TestUser3");
-    route.push_back("TestUser4");
-
+int scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num, int x)
+{
+    int key;
+    int selected = 0;
+    while (1) 
     {
-      Message m;
-      m.setFrom(from);
-      m.setTo(to);
-      m.setContent("HELL oWorld!");
-      //m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
-
-      filename = m.serialize();
+        key = getch();
+        if (key == KEY_DOWN || key == KEY_UP) 
+        {
+            wbkgd(items[selected + 1], COLOR_PAIR(3));
+            wnoutrefresh(items[selected + 1]);
+            if (key == KEY_DOWN) 
+            {
+                selected = (selected + 1) % count;
+            } 
+            else 
+            {
+                selected = (selected + count - 1) % count;
+            }
+            wbkgd(items[selected + 1],COLOR_PAIR(2));
+            wnoutrefresh(items[selected + 1]);
+            doupdate();
+        } 
+        else if (key == ESCAPE) 
+        {
+ 	       return check_quit(x);
+        } 
+        else if (key == ENTER) 
+        {
+            return selected + 1;
+        }
     }
-
-    std::string from2;
-    std::string to2;
-    std::string filename2;
-    Message m2;
-
-    from2 = to;
-
-    int size = route.size();
-    for (int i = 0; i < size; ++i){
-      to2 = from2;
-      from2 = route.back();
-      route.pop_back();
-
-  #if 1
-      gpg.encrypt_file(filename, to2, filename2);
-  #else
-      filename2 = filename;
-  #endif
-      filename = filename2;
-      if (from2.compare(from) == 0) {
-        break;
-      }
-
-      m2.setFrom(from2);
-      m2.setTo(to2);
-      m2.setBinary(filename2);
-      filename = m2.serialize();
-      m2.clear();
-    }
-  }
-
-
-//  std::string xxx = "xxd " + filename;
-//  system(xxx.c_str());
-
-  if (false) {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
-
-    Message m;
-    if (!m.deserialize(filename)) {
-      std::cout << "Fail to deserialize" << std::endl;
-      goto END_RELAY;
-    }
-
-    //(from.compare(m.getFrom()) == 0);
-    if (to.compare(m.getTo()) == 0 && m.getType() != 0) {
-      std::cout << "Oh, it's for me??" << std::endl;
-    }
-
-    END_RELAY:
-    ;
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser1", "xptmxmdlf");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser3", "xptmxmtka");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser4", "xptmxmtk");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-  }
-
-  {
-    GPG gpg;
-    gpg.verify_passphrase("TestUser5", "xptmxmdh");
-
-    std::string output;
-    if (!gpg.decrypt_file(filename, output)) {
-      std::cerr << "Fail to decrypt file" << std::endl;
-    }
-
-    Message m;
-    if (!m.deserialize(output)) {
-      std::cerr << "Fail to deserialize" << std::endl;
-    }
-
-    int type = m.getType();
-    filename = m.getContent();
-
-    if (m.getType() == 1) {
-      std::cout << m.getContent() << std::endl;
-      std::string x;
-      x = "xxd " + m.getContent();
-      system(x.c_str());
-    } else if (m.getType() == 2) {
-      std::cout << 2 << ": "<< m.getContent() << std::endl;
-    }
-  }
-
-  std::string x;
-  x = "rm /tmp/????????????????";
-  system(x.c_str());
-
-
-  system("echo asdfasdfasdfasdfasdfasdf > /tmp/input");
-
-  std::vector<std::string> routepath;
-  routepath.push_back("TestUser2");
-  routepath.push_back("TestUser1");
-  routepath.push_back("TestUser3");
-  routepath.push_back("TestUser4");
-  routepath.push_back("TestUser5");
-
-  std::string filepath;
-  filepath = enc("/tmp/input", routepath);
-
-  std::cout << filepath << std::endl;
-
-  std::string cmd = "xxd " + filepath;
-  system(cmd.c_str());
-
-  routepath.clear();
-
-  int ret;
-  std::string output;
-  std::string to;
-
-
-  std::vector<std::vector<std::string>> gpg_info;
-  gpg_info.push_back(std::vector<std::string> {"TestUser1", "xptmxmdlf"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser3", "xptmxmtka"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser4", "xptmxmtk"});
-  gpg_info.push_back(std::vector<std::string> {"TestUser5", "xptmxmdh"});
-
-  for (auto it = gpg_info.begin(); it != gpg_info.end(); ++it){
-
-    ret = dec(filepath, (*it)[0], (*it)[1], output, to);
-    if (ret == 1) {
-      std::cout << "Oh! It's for me!" << std::endl;
-      // put message to ui
-      // to do this thing we have to know from
-      //  ???, ???: message
-      std::cout << "File:" << output << std::endl;
-      std::string cmd = "xxd " + output;
-      system(cmd.c_str());
-    } else if (ret == 0) {
-      std::cout << "This is not mine... send to " << to << std::endl;
-      // relay to other
-      filepath = output;
-    } else if (ret == -1) {
-      std::cout << "Weired packet... " << std::endl;
-      std::cout << "STOP" << std::endl;
-      // drop
-      exit(1);
-    } else {
-      std::cout << "WHATTHEFUCK" << std::endl;
-      std::cout << "STOP" << std::endl;
-      // drop
-      exit(1);
-    }
-  }
-
-
-
-
-
-  std::cout << "DONE" << std::endl;
-  system("rm /tmp/input");
-*/
-  return 0;
 }
+
+WINDOW ** chat_form(int selected_item, int start_col){
+	
+	int key;
+	WINDOW ** chat_items;
+	unsigned int len = userlist[selected_item].size() / 2;
+
+	chat_items = new WINDOW * [4];
+	chat_items[0] = newwin(30, 45, 2, start_col);
+	wbkgd(chat_items[0], COLOR_PAIR(3));
+	box(chat_items[0], ACS_VLINE, ACS_HLINE);
+
+	chat_items[1] = subwin(chat_items[0], 1, 40, 3, start_col + 2);
+	wbkgd(chat_items[1], COLOR_PAIR(3));
+	mvwprintw(chat_items[1], 0, 20 - len, "%s", userlist[selected_item].c_str());
+	chat_items[2] = subwin(chat_items[0], 20, 40, 4, start_col + 2);
+	wbkgd(chat_items[2], COLOR_PAIR(4));
+	chat_items[3] = subwin(chat_items[0], 5, 40, 25, start_col + 2);
+	wbkgd(chat_items[3], COLOR_PAIR(4));
+	wrefresh(chat_items[0]);
+	return chat_items;
+
+}
+/*
+std::string pack_total(std::string str1, std::string str2, int sel){
+//0: message 1: message 3: id,passphrase 4: list
+	std::string packet;
+	if(sel == 0){
+		packet += '0';
+	}
+	else if(sel == 1)
+		packet += '1';
+	else if(sel == 3)
+		packet += '3';
+	else if(sel == 4)
+		packet += '4';
+	packet += str1.size();
+	packet += str1;
+	packet += str2.size();
+	packet += str2;
+
+	return packet;
+}
+*/
+
+int chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
+
+	std::vector<std::string> * history = & hist[userlist[selected_item]];
+	int key, offset;
+	int sel = 0;
+	char * message;
+	std::string msg_total, show_msg, msg_send;
+
+	
+	WINDOW ** chat;
+	chat = chat_form(selected_item, x/2 - 20);
+	message = new char[200];
+	while(1){
+
+		memset(message, 0, 200);
+		msg_total = USER + ": ";
+
+		mtx.lock();
+		if(history->size() != 0) {
+			offset = 0;
+			for(int i = 0; i < history->size(); i++) {
+				show_msg = *(history->begin() + i);
+				mvwprintw(chat[2], offset, 0, "%s", show_msg.c_str());
+				offset += show_msg.size() / 40 + 1;
+			}	
+			wnoutrefresh(chat[2]);
+			doupdate();
+		}
+		mtx.unlock();
+
+		mvwprintw(chat[3], 0, 0, ">>");
+		wmove(chat[3], 0, 2);
+		keypad(chat[3], TRUE);
+		for(int i = 0; i < 199; i ++){
+			key = wgetch(chat[3]);
+			if ( key == ESCAPE) {
+				if(i == 0) {
+					delete chat;
+					return 1;
+				}
+				else {
+					memset(message, 0, 200);
+					werase(chat[3]);
+					mvwprintw(chat[3], 0, 0, ">>");
+					wmove(chat[3], 0, 2);
+					wnoutrefresh(chat[2]);
+					wnoutrefresh(chat[3]);
+					doupdate();
+					i = -1;
+					continue;
+				}
+			}
+			else if( key == ENTER ) {
+				if(i == 0) {
+					i = -1;
+					continue;
+				}
+				werase(chat[3]);
+				wnoutrefresh(chat[2]);
+				wnoutrefresh(chat[3]);
+				doupdate();
+				message[i] = '\0';
+				break;
+			}
+
+			else if( key == KEY_BACKSPACE || key == 127)
+			{
+				if(i == 0){
+					message[i] = 0;
+					i = -1;
+					continue;
+				}
+				else {
+					i--;
+					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * ((i + 2)/40), " ");
+					message[i] = 0;
+					delch();
+					wmove(chat[3], (i + 2)/40, (i + 2) - 40 * ((i + 2)/40));
+					wnoutrefresh(chat[3]);
+					doupdate();
+					if(i > 0){
+						i--;
+						continue;
+					}
+					else if(i <= 0){
+						memset(message, 0, 200);
+						i = -1;
+						continue;
+					}
+				}
+
+			}
+			else if( key == KEY_F(2) && i == 0)
+			{
+				echo();
+				sel = 1;
+				mvwprintw(chat[3], 0, 0, "file?: ");
+				wgetnstr(chat[3], message, 199);
+				for(int z = 0; z < 199; z++){
+					if(message[z] == 0){
+						i = z;
+						break;
+					}
+				}
+				message[i + 1] = '\0';
+				noecho();
+				continue;
+			}
+
+			else {
+				message[i] = key;
+				wprintw(chat[3], &message[i]);
+				continue;
+			}
+		}
+		std::string msg(message);
+		msg_total += msg;
+//Store in history
+		mtx.lock();
+		hist[userlist[selected_item]].push_back(msg_total);
+		mtx.unlock();
+		//Todo : socket send
+		msg_send = pack_total(userlist[selected_item], msg_total, sel);
+		write(fd, msg_send.c_str(), msg_send.size());
+		sel = 0;
+		memset(message, 0, 200);
+	}
+	delete message;
+}
+
+int messenger_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
+
+    hist_map();
+	int x, y, key, selected_item;					/*center position*/
+    std::string packet;
+	char * password, * gitid;
+	unsigned int list_size = userlist.size() - 1;
+
+	password = new char[100];
+	gitid = new char[100];
+
+	//To do : socket open
+	//get list
+
+	init_scr();
+	getmaxyx(stdscr, y, x);
+
+	WINDOW * passwindow = newwin(6, 80, y/2 - 3, x/2 - 40);
+	refresh();
+	box(passwindow, 0, 0);
+	wbkgd(passwindow, COLOR_PAIR(3));
+	echo();
+	mvwprintw(passwindow, 1, 5, "Enter the ID: ");
+	wmove(passwindow, 1, 20);
+	wgetnstr(passwindow, gitid, 80);
+	USER = gitid;
+	noecho();
+	mvwprintw(passwindow, 3, 5, "Passphrase: ");
+	wmove(passwindow, 3, 18);
+	wgetnstr(passwindow, password, 80);
+	//socket send id, passphrase
+	packet = pack_total(gitid, password, 3);
+	
+	int client_len;
+	int n = -1;
+
+	struct sockaddr_in serveraddr;
+
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+		perror("socket");
+
+	serveraddr.sin_family = AF_INET;		//127.0.0.1
+	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
+	serveraddr.sin_port = htons(5556);     //143.248.230.55
+	client_len = sizeof(serveraddr);
+
+	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+		perror("connect error :");
+	write(fd, packet.c_str(), packet.size());
+
+
+	//read(fd, list, listsize)
+
+	delwin(passwindow);
+	delete password;
+	touchwin(stdscr);
+	refresh();
+	
+
+	while(1){
+		noecho();
+		WINDOW ** user_list;
+		user_list = test_list(x/2 - 20, userlist.size());
+		selected_item = scroll_menu(user_list, list_size, 0, 1, x);
+
+		if(selected_item == -1)
+			break;
+		if(selected_item == 0) {
+			touchwin(stdscr);
+			refresh();
+			continue;
+		}
+
+		if(chat_room(x, selected_item, hist, reff) == 1) { 
+			touchwin(stdscr);
+        	refresh();
+			continue;
+		}
+		else 
+	    	touchwin(stdscr);
+        	refresh(); 
+			continue;
+
+        touchwin(stdscr);
+        refresh(); 
+        delete user_list;
+	}
+	
+	endwin();
+	delete gitid;
+	userlist.clear();	
+	hist.clear();
+	return 0;
+}
+
+std::vector<std::string> receiver(std::string recv) {
+	std::vector<std::string> msg_tot;
+	std::string str1, str2;
+	unsigned char check, len1, len2;
+
+	while(!recv.empty()){
+		check = recv[0];
+		len1 = recv[1];
+		str1 = recv.substr(2, len1);
+		len2 = recv[2 + len1];
+		str2 = recv.substr(len1 + 3, len2);
+		if(check == '0'){
+			
+			msg_tot.push_back(str2);
+
+		}
+		else if(check == '1'){
+	//		str2.replace(recv.find(":") + 2, recv.end() - recv.find(":") - 2, "sent file!");
+			msg_tot.push_back(str2);
+		}
+		else if(check == '4'){
+			//list
+			
+		}
+		recv.erase(0, 3 + len1 + len2);
+	}
+
+	msg_tot.push_back(str2);
+	return msg_tot;
+}
+
+void dist_to_hist(std::vector<std::string> vec){
+	unsigned int found;
+	for(std::vector<std::string>::iterator it = vec.begin() ; it != vec.end(); it++){
+		found = it->find(":");
+		std::string &msg = *it;
+		std::string name = it->substr(0, found -1);
+		for(std::map<std::string, std::vector<std::string> >::iterator at = hist.begin() ; at != hist.end(); at++){
+			if((at->first).compare(name) == 0){
+				(at->second).push_back(msg);
+			}
+		}
+	}
+}
+
+
+int recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
+
+//socket read
+	std::vector<std::string> newmsg;
+	std::string read_soc;
+	newmsg = receiver(read_soc);
+	mtx.lock();
+	if(reff = false){
+//Distribute newmsg to hist;
+		dist_to_hist(newmsg);
+		reff = true;
+	}
+	mtx.unlock();
+	return 0;
+}
+
+int main() {
+	bool reff = false;
+	std::string USER;
+	std::vector<std::string> userlist;
+	std::map<std::string, std::vector<std::string> > hist;
+
+	std::thread t1(messenger_UI, std::ref(hist), std::ref(reff));
+	std::thread t2(recv_UI, std::ref(hist), std::ref(reff));
+	std::thread t3(relay);
+
+
+	t1.join();
+	t2.join();
+
+	return 0;
+}
+

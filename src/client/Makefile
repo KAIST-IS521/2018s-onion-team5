@@ -7,7 +7,7 @@ gpg_wrapper.o message_wrapper.o \
 ../common/tcp_server.o ../common/tcp_client.o \
 
 TARGET = Onion5_client
-LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread
+LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread -levent -lcurses
 CFLAGS= -std=c++11
 
 .SUFFIXES : .cc .o

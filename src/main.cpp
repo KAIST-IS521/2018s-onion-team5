@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <cstdlib>
 #include <cstring>
+#include "relay3.cpp"
 
 #define ESCAPE 27
 #define ENTER 10
@@ -152,7 +153,7 @@ WINDOW ** chat_form(int selected_item, int start_col){
 	return chat_items;
 
 }
-
+/*
 std::string pack_total(std::string str1, std::string str2, int sel){
 //0: message 1: message 3: id,passphrase 4: list
 	std::string packet;
@@ -172,6 +173,7 @@ std::string pack_total(std::string str1, std::string str2, int sel){
 
 	return packet;
 }
+*/
 
 int chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 
@@ -376,7 +378,7 @@ int messenger_UI(std::map<std::string, std::vector<std::string> > & hist, bool &
 			continue;
 		}
 
-		if(chat_room(x, selected_item) == 1) { 
+		if(chat_room(x, selected_item, hist, reff) == 1) { 
 			touchwin(stdscr);
         	refresh();
 			continue;
@@ -468,6 +470,7 @@ int main() {
 
 	std::thread t1(messenger_UI, std::ref(hist), std::ref(reff));
 	std::thread t2(recv_UI, std::ref(hist), std::ref(reff));
+	std::thread t3(relay);
 
 
 	t1.join();
