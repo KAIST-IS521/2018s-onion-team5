@@ -15,6 +15,7 @@
 class UI
 {
 public :
+	int fd;
 	std::string USER;
 	std::vector<std::string> userlist;
 	std::map<std::string, std::vector<std::string>> hist;

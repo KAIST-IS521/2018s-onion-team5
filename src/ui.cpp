@@ -153,6 +153,7 @@ int UI::chat_room(int x, int selected_item) {
 
 	std::vector<std::string> * history = & hist[userlist[selected_item]];
 	int key, offset;
+	int sel - 0;
 	char * message;
 	std::string msg_total, show_msg;
 
@@ -162,7 +163,7 @@ int UI::chat_room(int x, int selected_item) {
 
 	while(1){
 		memset(message, 0, 200);
-		msg_total = "TestUser5: ";
+		msg_total = USER + ": ";
 		if(history->size() != 0) {
 			offset = 0;
 			for(int i = 0; i < history->size(); i++) {
@@ -217,10 +218,10 @@ int UI::chat_room(int x, int selected_item) {
 				}
 				else {
 					i--;
-					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * (i/40), " ");
+					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * ((i + 2)/40), " ");
 					message[i] = 0;
 					delch();
-					wmove(chat[3], (i + 2)/40, (i+2) - 40 * (i/40));
+					wmove(chat[3], (i + 2)/40, (i+2) - 40 * ((i + 2)/40));
 					wnoutrefresh(chat[3]);
 					doupdate();
 					if(i != 0){
@@ -237,8 +238,11 @@ int UI::chat_room(int x, int selected_item) {
 			}
 			else if( key == KEY_F(2) && i == 0)
 			{
+				echo();
+				sel = 1;
 				mvwprintw(chat[3], 0, 0, "file?: ");
 				wgetnstr(chat[3], message, 199);
+				noecho();
 				//i = strlen(message);
 				continue;
 
@@ -246,6 +250,7 @@ int UI::chat_room(int x, int selected_item) {
 
 			else {
 				message[i] = key;
+				wprintw(chat[3], &message[i]);
 				continue;
 			}
 		}
@@ -254,13 +259,16 @@ int UI::chat_room(int x, int selected_item) {
 //Store in history
 		hist[userlist[selected_item]].push_back(msg_total);
 		//sockect send
-		msg_send = pack_total(userlist[selected_item], msg_total, 0);
+		msg_send = pack_total(userlist[selected_item], msg_total, sel);
+		write(fd, msg_send.c_str(), msg_send.size());
+		sel = 0;
+		memset(message, 0, 200);
 
 	}
 	delete message;
 }
 
-int UI::messenger() {
+int UI::messenger(void * ref) {
 
     hist_map();
 	int x, y, key, selected_item;					/*center position*/
@@ -270,8 +278,11 @@ int UI::messenger() {
 
 	password = new char[80];
 	gitid = new char[80];
+
+	//Todo : socket open
+	//getlist
+
 	init_scr();
-	bkgd(COLOR_PAIR(1));
 	getmaxyx(stdscr, y, x);
 
 	WINDOW * passwindow = newwin(6, 80, y/2 - 3, x/2 - 40);
@@ -289,6 +300,25 @@ int UI::messenger() {
 	wgetnstr(passwindow, password, 80);
 
 	packet = id_total(gitid, password, 3);
+
+	int client_len;
+	int n = -1;
+
+	struct sockaddr_in serveraddr;
+
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+		perror("socket");
+
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
+	serveraddr.sin_port = htons(5556);
+	client_len = sizeof(serveraddr);
+
+	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+		perror("connect error :");
+	write(fd, packet.c_str(), packet.size());
+
+//	read(fd, list, listsize)
 
 	delwin(passwindow);
 	delete password;
@@ -380,7 +410,7 @@ void UI::dist_to_hist(std::vector<std::string> vec){
 	}
 }
 
-int recv(bool &running) {
+int recv(void * ref) {
 
 	std::vector<std::string> newmsg;
 
@@ -393,10 +423,10 @@ int recv(bool &running) {
 }
 
 int main() {
-	bool running = true;
+	bool ref = true;
 	std::vector<std::string> newmsg;
-	std::thread t1(messenger);
-	std::thread t2(recv);
+	std::thread t1(messenger, &ref);
+	std::thread t2(recv, &ref);
 
 	t1.join();
 	t2.join();

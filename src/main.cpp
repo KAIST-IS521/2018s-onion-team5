@@ -3,19 +3,23 @@
 #include <unistd.h>
 #include <thread>
 #include "ui.hpp"
+#include <sys/socket.h>
+#include <cstdio>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <cstdlib>
 #include <cstring>
 
 #define ESCAPE 27
 #define ENTER 10
 
-//Test
-//std::string ssstr = 
-
-
 std::string USER;
 std::vector<std::string> userlist;
 std::vector<std::string> newmsg;
 std::map<std::string, std::vector<std::string> > hist;
+int fd;
+
 
 //this can be deleted
 void init_testset() {
@@ -239,13 +243,12 @@ int chat_room(int x, int selected_item) {
 				}
 				else {
 					i--;
-					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * (i/40), " ");
+					mvwprintw(chat[3], (i + 2)/40, (i + 2) - 40 * ((i + 2)/40), " ");
 					message[i] = 0;
 					delch();
-					wmove(chat[3], (i + 2)/40, (i+2) - 40 * (i/40));
+					wmove(chat[3], (i + 2)/40, (i + 2) - 40 * ((i + 2)/40));
 					wnoutrefresh(chat[3]);
 					doupdate();
-					//ungetch();
 					if(i > 0){
 						i--;
 						continue;
@@ -260,9 +263,11 @@ int chat_room(int x, int selected_item) {
 			}
 			else if( key == KEY_F(2) && i == 0)
 			{
+				echo();
 				sel = 1;
 				mvwprintw(chat[3], 0, 0, "file?: ");
 				wgetnstr(chat[3], message, 199);
+				noecho();
 				//i = strlen(message);
 				continue;
 
@@ -281,12 +286,14 @@ int chat_room(int x, int selected_item) {
 
 		//Todo : socket send
 		msg_send = pack_total(userlist[selected_item], msg_total, sel);
+		write(fd, msg_send.c_str(), msg_send.size());
+		sel = 0;
 		memset(message, 0, 200);
 	}
 	delete message;
 }
 
-int main() {
+int messenger_UI(void * ref) {
 
     hist_map();
 	int x, y, key, selected_item;					/*center position*/
@@ -318,6 +325,26 @@ int main() {
 	wgetnstr(passwindow, password, 80);
 	//socket send id, passphrase
 	packet = pack_total(gitid, password, 3);
+	
+	int client_len;
+	int n = -1;
+
+	struct sockaddr_in serveraddr;
+
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+		perror("socket");
+
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
+	serveraddr.sin_port = htons(5556);
+	client_len = sizeof(serveraddr);
+
+	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+		perror("connect error :");
+	write(fd, packet.c_str(), packet.size());
+
+
+	//read(fd, list, listsize)
 
 	delwin(passwindow);
 	delete password;
@@ -407,7 +434,7 @@ void dist_to_hist(std::vector<std::string> vec){
 }
 
 
-int recv(bool &running) {
+int recv_UI(void * ref) {
 
 	std::vector<std::string> newmsg;
 
@@ -422,18 +449,20 @@ int recv(bool &running) {
 	return 0;
 }
 
-/*int main() {
+int main() {
 
-	std::thread t1(messenger_UI);
-	std::thread t2(recv);
+	std::string USER;
+	std::vector<std::string> userlist;
+	std::vector<std::string> newmsg;
+	std::map<std::string, std::vector<std::string> > hist;
 
-
-
+	std::thread t1(messenger_UI, &userlist);
+	std::thread t2(recv_UI, &userlist);
 
 
 	t1.join();
 	t2.join();
 
 	return 0;
-}*/
+}
 
