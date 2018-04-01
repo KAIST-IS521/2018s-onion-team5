@@ -195,7 +195,8 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 
 			//TODO 테스트 변수
 			std::vector<std::string> vec_out;
-			std::string next_dest_ip = "143.248.231.97";
+			//std::string next_dest_ip = "143.248.231.97";
+			std::string next_dest_ip = argv[1];
 			std::string output_file = "zpzpzpzp";
 //vector<string> = randomizer(Nodelist nodelist,std::string my_github_id, std::string final_github_id);
 
@@ -205,6 +206,23 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 			len2 = recv[2 + len1];
 			str2 = recv.substr(len1 + 3, len2);
 
+			// **************************test start
+			if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+				perror("socket");
+
+			serveraddr.sin_family = AF_INET;
+			serveraddr.sin_addr.s_addr = inet_addr(next_dest_ip.c_str()); //TODO 깃허브 아이디 받아서 IP로 변환 전역변수 nodelist에서 ip 빼오기.
+			serveraddr.sin_port = htons(SERVER_PORT);
+			client_len = sizeof(serveraddr);
+
+			if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
+				perror("connect error :");
+
+			int recv_len = recv.size();
+			write(fd, recv.c_str(), recv_len);
+			close(fd);
+
+			// ********************************test end
 			if (check == '0') {
 				/*// 테스트
 				std::cout << "TXT" <<std::endl;
@@ -398,7 +416,7 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 	char buffer[1024] = {0, };
 	int n = -1;
 	std::string pkt, str1, str2;
-	int ret = 1;
+	int ret = 0;
 	
 	//테스트용 변수들. 원래는 다른곳에서 받아와야함.
 	std::string input_file_name;
@@ -424,7 +442,6 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 					string &output_file_name,
 					string &next_github_id);
 		*/
-		//ret = parser(client->file_name, "is521ghkdlxld", parser_out);
 		//ret 1: 릴레이, ret 0: 내꺼, ret -1: 버림
 		if (ret == 1) {
 
@@ -468,7 +485,8 @@ buffered_on_error_hj(struct bufferevent *bev, short what, void *arg)
 			//문자
 			if (type == 1) {
 				int file_len = -1;
-				client->fp = fopen(output_file_name.c_str(),"rb");
+				//client->fp = fopen(output_file_name.c_str(),"rb");  // ******************test
+				client->fp = fopen(client->file_name,"rb");
 				if (!(client->fp))
 					perror("fopen");
 
