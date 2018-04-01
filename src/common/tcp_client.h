@@ -24,6 +24,7 @@ public:
 
   bool connect();
   int send(std::string data);
+  int send_file(std::string path);
   int recv(std::string &data);
   void close();
 

@@ -20,8 +20,9 @@
 #include "udp_client.h"
 #include "gpg_wrapper.h"
 #include "message_wrapper.h"
+#include "yang_crypto.h"
 
-void adver_loop(std::string &name) {
+void adver_loop(std::string name) {
   while (true) {
     advertise(name);
     sleep(5);
@@ -53,13 +54,14 @@ int main(int argc, char *argv[]) {
 
   std::thread thread_listener(listener, name, std::ref(node_list));
   std::thread thread_advertise(adver_loop, name);
-  std::thread thread_input(adver_loop, name);
+  //std::thread thread_input(adver_loop, name);
 
   thread_listener.join();
   thread_advertise.join();
 
   exit(1);
 
+/*
   std::string filename;
 
   std::string from;
@@ -84,8 +86,8 @@ int main(int argc, char *argv[]) {
       Message m;
       m.setFrom(from);
       m.setTo(to);
-      //m.setContent("HELL oWorld!");
-      m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
+      m.setContent("HELL oWorld!");
+      //m.setFile("/home/ahnmo/Git/2018s-onion-team5/secret.txt");
 
       filename = m.serialize();
     }
@@ -108,6 +110,11 @@ int main(int argc, char *argv[]) {
   #else
       filename2 = filename;
   #endif
+      filename = filename2;
+      if (from2.compare(from) == 0) {
+        break;
+      }
+
       m2.setFrom(from2);
       m2.setTo(to2);
       m2.setBinary(filename2);
@@ -115,6 +122,10 @@ int main(int argc, char *argv[]) {
       m2.clear();
     }
   }
+
+
+//  std::string xxx = "xxd " + filename;
+//  system(xxx.c_str());
 
   if (false) {
     GPG gpg;
@@ -139,55 +150,78 @@ int main(int argc, char *argv[]) {
     GPG gpg;
     gpg.verify_passphrase("TestUser1", "xptmxmdlf");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser3", "xptmxmtka");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser4", "xptmxmtk");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    // 내용 체크 스킵
-    filename = output;
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
+
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
   }
 
   {
     GPG gpg;
     gpg.verify_passphrase("TestUser5", "xptmxmdh");
 
-    Message m;
-    if (!m.deserialize(filename)) { }
-
     std::string output;
-    gpg.decrypt_file(m.getContent(), output);
-    m.clear();
+    if (!gpg.decrypt_file(filename, output)) {
+      std::cerr << "Fail to decrypt file" << std::endl;
+    }
 
-    if (!m.deserialize(output)) { }
+    Message m;
+    if (!m.deserialize(output)) {
+      std::cerr << "Fail to deserialize" << std::endl;
+    }
+
+    int type = m.getType();
+    filename = m.getContent();
+
     if (m.getType() == 1) {
       std::cout << m.getContent() << std::endl;
+      std::string x;
+      x = "xxd " + m.getContent();
+      system(x.c_str());
     } else if (m.getType() == 2) {
       std::cout << 2 << ": "<< m.getContent() << std::endl;
     }
@@ -198,6 +232,70 @@ int main(int argc, char *argv[]) {
   system(x.c_str());
 
 
+  system("echo asdfasdfasdfasdfasdfasdf > /tmp/input");
 
+  std::vector<std::string> routepath;
+  routepath.push_back("TestUser2");
+  routepath.push_back("TestUser1");
+  routepath.push_back("TestUser3");
+  routepath.push_back("TestUser4");
+  routepath.push_back("TestUser5");
+
+  std::string filepath;
+  filepath = enc("/tmp/input", routepath);
+
+  std::cout << filepath << std::endl;
+
+  std::string cmd = "xxd " + filepath;
+  system(cmd.c_str());
+
+  routepath.clear();
+
+  int ret;
+  std::string output;
+  std::string to;
+
+
+  std::vector<std::vector<std::string>> gpg_info;
+  gpg_info.push_back(std::vector<std::string> {"TestUser1", "xptmxmdlf"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser3", "xptmxmtka"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser4", "xptmxmtk"});
+  gpg_info.push_back(std::vector<std::string> {"TestUser5", "xptmxmdh"});
+
+  for (auto it = gpg_info.begin(); it != gpg_info.end(); ++it){
+
+    ret = dec(filepath, (*it)[0], (*it)[1], output, to);
+    if (ret == 1) {
+      std::cout << "Oh! It's for me!" << std::endl;
+      // put message to ui
+      // to do this thing we have to know from
+      //  ???, ???: message
+      std::cout << "File:" << output << std::endl;
+      std::string cmd = "xxd " + output;
+      system(cmd.c_str());
+    } else if (ret == 0) {
+      std::cout << "This is not mine... send to " << to << std::endl;
+      // relay to other
+      filepath = output;
+    } else if (ret == -1) {
+      std::cout << "Weired packet... " << std::endl;
+      std::cout << "STOP" << std::endl;
+      // drop
+      exit(1);
+    } else {
+      std::cout << "WHATTHEFUCK" << std::endl;
+      std::cout << "STOP" << std::endl;
+      // drop
+      exit(1);
+    }
+  }
+
+
+
+
+
+  std::cout << "DONE" << std::endl;
+  system("rm /tmp/input");
+*/
   return 0;
 }

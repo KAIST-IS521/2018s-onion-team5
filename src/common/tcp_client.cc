@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fstream>
 
 TCP_Client::TCP_Client(std::string host, int port) {
   this->client = true;
@@ -155,8 +156,8 @@ int TCP_Client::recv(std::string &data) {
 
   int offset = 0;
   char buff[BUFSIZ + 1];
+  std::ofstream os;
   if (type == 1) {
-    std::ofstream os;
     retval = get_temppath();
     os.open(retval, std::ofstream::binary);
   }
