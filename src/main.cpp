@@ -267,10 +267,15 @@ int chat_room(int x, int selected_item) {
 				sel = 1;
 				mvwprintw(chat[3], 0, 0, "file?: ");
 				wgetnstr(chat[3], message, 199);
+				for(int z = 0; z < 199; z++){
+					if(message[z] == 0){
+						i = z;
+						break;
+					}
+				}
+				message[i + 1] = '\0';
 				noecho();
-				//i = strlen(message);
 				continue;
-
 			}
 
 			else {
@@ -334,9 +339,9 @@ int messenger_UI(void * ref) {
 	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 		perror("socket");
 
-	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_family = AF_INET;		//127.0.0.1
 	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
-	serveraddr.sin_port = htons(5556);
+	serveraddr.sin_port = htons(5556);     //143.248.230.55
 	client_len = sizeof(serveraddr);
 
 	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
@@ -405,7 +410,7 @@ std::vector<std::string> receiver(std::string recv) {
 
 		}
 		else if(check == '1'){
-//			str2.replace(recv.find(":") + 2, recv.end() - recv.find(":") - 2, "sent file!");
+	//		str2.replace(recv.find(":") + 2, recv.end() - recv.find(":") - 2, "sent file!");
 			msg_tot.push_back(str2);
 		}
 		else if(check == '4'){

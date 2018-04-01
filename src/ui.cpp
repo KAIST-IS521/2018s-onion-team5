@@ -242,8 +242,14 @@ int UI::chat_room(int x, int selected_item) {
 				sel = 1;
 				mvwprintw(chat[3], 0, 0, "file?: ");
 				wgetnstr(chat[3], message, 199);
+				for(int z = 0; z < 199; z++){
+					if(message[z] == 0){
+						i = z;
+						break;
+					}
+				}
+				message[i + 1] = '\0';
 				noecho();
-				//i = strlen(message);
 				continue;
 
 			}
