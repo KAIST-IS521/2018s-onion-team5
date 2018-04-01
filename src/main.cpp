@@ -200,7 +200,7 @@ int chat_room(int x, int selected_item) {
 		noecho();
 		keypad(chat[3], TRUE);
 		for(int i = 0; i < 199; i ++){
-			message[i] = {0,};
+			memset(message, 0, 200);
 			key = wgetch(chat[3]);
 			if ( key == ESCAPE) {
 				if(i == 0) {
