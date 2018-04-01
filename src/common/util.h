@@ -2,6 +2,13 @@
 
 #include <string>
 
+
+//////////////////////////////////////////////////////
+int get_file_size(IN FILE *fp);
+char *rand_string(IN char *str, IN size_t size);
+
+//////////////////////////////////////////////////////
+
 int get_file_size(std::string locate);
 std::string get_temppath();
 std::string save_tempfile(std::string content);
