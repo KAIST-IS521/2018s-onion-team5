@@ -1,6 +1,6 @@
 #include <thread>
 #include <iostream>
-#include "relay3.c"
+#include "relay3.cpp"
 using namespace std;
 
 void func1() {
