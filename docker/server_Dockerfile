@@ -9,7 +9,8 @@ RUN apt-get update
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
     make git libncurses-dev build-essential libcurl4-openssl-dev \
-    libprotobuf-c++ libpsocksxx-dev protobuf-compiler libprotobuf-dev
+    libprotobuf-c++ libpsocksxx-dev protobuf-compiler libprotobuf-dev \
+    libevent-dev
 
 RUN rm -rf /var/lib/apt/lists/*
 RUN apt-get clean

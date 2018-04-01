@@ -142,16 +142,19 @@ bool delete_file(std::string locate) {
 }
 
 bool rand_initialized = false;
+void rand_seed() {
+  int fd = open("/dev/urandom", O_RDONLY);
+  unsigned int seed;
+  if (read(fd, &seed, sizeof(unsigned int)) != sizeof(unsigned int)) {
+    // error read
+  }
+  close(fd);
+  srand(seed);
+  rand_initialized = true;
+}
 std::string random_string(size_t length) {
   if (!rand_initialized) {
-    int fd = open("/dev/urandom", O_RDONLY);
-    unsigned int seed;
-    if (read(fd, &seed, sizeof(unsigned int)) != sizeof(unsigned int)) {
-      // error read
-    }
-    close(fd);
-    srand(seed);
-    rand_initialized = true;
+    rand_seed();
   }
   auto randchar = []() -> char {
     const char charset[] =
@@ -164,4 +167,43 @@ std::string random_string(size_t length) {
   std::string str(length,0);
   std::generate_n(str.begin(), length, randchar);
   return str;
+}
+
+std::vector<std::string> generate_path(
+  std::map<std::string, std::string> nodelist,
+  std::string from,
+  std::string to,
+  int count
+) {
+  if (!rand_initialized) {
+    rand_seed();
+  }
+
+  std::vector<std::string> keys;
+  std::vector<std::string> result;
+
+  for (auto const& s: nodelist)
+    keys.push_back(s.first);
+
+  keys.erase(std::remove(keys.begin(), keys.end(), from), keys.end());
+  keys.erase(std::remove(keys.begin(), keys.end(),   to), keys.end());
+
+  auto rng = std::default_random_engine {};
+  rng.seed(rand());
+  std::shuffle(std::begin(keys), std::end(keys), rng);
+
+  result.push_back(from);
+  for (int i = 0; i < count; ++i)
+    result.push_back(keys[i]);
+  result.push_back(to);
+
+  return result;
+}
+
+std::vector<std::string> generate_path(
+  std::map<std::string, std::string> nodelist,
+  std::string from,
+  std::string to
+) {
+  return generate_path(nodelist, from, to, 3);
 }
