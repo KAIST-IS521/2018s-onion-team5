@@ -65,7 +65,7 @@ bool GPG::verify_passphrase(std::string name, std::string passphrase) {
   cmd = "rm " + tempfile;
   system(cmd.c_str());
 
-  printf("status %d\n", status);
+  //printf("status %d\n", status);
 
   GPG_RET_CHECK({
     this->name = name;

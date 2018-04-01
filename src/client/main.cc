@@ -1,11 +1,4 @@
-#include <iostream>
-#include <string>
-#include <map>
-#include <string>
-#include <vector>
-#include <thread>
 
-#include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -162,6 +155,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::cout << "Loggined" << std::endl;
+
 
   std::thread thread_liste(liste_loop, std::ref(msgr));
   std::thread thread_adver(adver_loop, msgr.get_name());

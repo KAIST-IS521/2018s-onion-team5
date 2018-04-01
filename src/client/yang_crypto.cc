@@ -11,6 +11,7 @@ int dec(
   std::string input_file,
   std::string my_github_id,
   std::string passphrase,
+	int *type,
   std::string& output_file,
   std::string& github_id
 ) {
@@ -22,7 +23,14 @@ int dec(
     //temp_file = input_file;
     Message m;
     m.deserialize(temp_file);
-    output_file = m.getContent();
+		if (m.getType() == 1) { // type == 1 content, type == 2 file.
+			output_file = m.getContent();
+			*type = 1;
+		}
+		else if (m.getType() == 2) {
+			output_file = m.getContent();
+			*type = 2;
+		}
     std::string to = m.getTo();
     if (my_github_id.compare(to) == 0) {
       github_id = "";
@@ -40,7 +48,8 @@ int dec(
 
 std::string enc(
   std::string input_file,
-  std::vector<std::string> path
+  std::vector<std::string> path,
+	int type
 ) {
   GPG g;
   g.set_dummy_cred();
@@ -55,7 +64,13 @@ std::string enc(
     Message m;
     m.setFrom(from);
     m.setTo(to);
-    m.setFile(input_file);
+		if (type == 1) {
+			m.setContent(input_file);
+		}
+		if (type == 2) {
+			m.setFile(input_file);
+		}
+    //m.setFile(input_file);
     filename = m.serialize();
   }
 

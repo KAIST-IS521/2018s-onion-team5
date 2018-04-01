@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#define IN
+#define OUT
 #include <vector>
 #include <map>
 

@@ -8,7 +8,7 @@ gpg_wrapper.o message_wrapper.o \
 messenger.o
 
 TARGET = Onion5_client
-LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread
+LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread -levent -lcurses
 CFLAGS= -std=c++11
 
 .SUFFIXES : .cc .o
