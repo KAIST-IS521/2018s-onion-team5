@@ -12,7 +12,7 @@ void UI::init_testset() {
 	userlist.push_back("TestUser4");
 }
 
-void UI::hist_map()
+void UI::hist_map(std::map<std::string, std::vector<std::string> > & hist)
 {
 	init_testset();
 	for(int i = 0; i < userlist.size(); i++)
@@ -149,13 +149,13 @@ std::string UI::pack_total(std::string str1, std::string str2, int sel){
 	return packet;
 }
 
-int UI::chat_room(int x, int selected_item) {
+int UI::chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 
 	std::vector<std::string> * history = & hist[userlist[selected_item]];
 	int key, offset;
 	int sel - 0;
 	char * message;
-	std::string msg_total, show_msg;
+	std::string msg_total, show_msg, msg_send;
 
 	message = new char[200];
 	WINDOW ** chat;
@@ -164,6 +164,7 @@ int UI::chat_room(int x, int selected_item) {
 	while(1){
 		memset(message, 0, 200);
 		msg_total = USER + ": ";
+		mtx.lock();
 		if(history->size() != 0) {
 			offset = 0;
 			for(int i = 0; i < history->size(); i++) {
@@ -174,6 +175,7 @@ int UI::chat_room(int x, int selected_item) {
 			wnoutrefresh(chat[2]);
 			doupdate();
 		}
+		mtx.unlock();
 
 		mvwprintw(chat[3], 0, 0, ">>");
 		echo();
@@ -214,6 +216,7 @@ int UI::chat_room(int x, int selected_item) {
 			{
 				if(i == 0){
 					message[i] = 0;
+					i = -1;
 					continue;
 				}
 				else {
@@ -263,7 +266,9 @@ int UI::chat_room(int x, int selected_item) {
 		std::string msg(message);
 		msg_total += message;
 //Store in history
+		mtx.lock();
 		hist[userlist[selected_item]].push_back(msg_total);
+		mtx.unlock();
 		//sockect send
 		msg_send = pack_total(userlist[selected_item], msg_total, sel);
 		write(fd, msg_send.c_str(), msg_send.size());
@@ -274,9 +279,11 @@ int UI::chat_room(int x, int selected_item) {
 	delete message;
 }
 
-int UI::messenger(void * ref) {
+void UI::messenger_UI (std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 
-    hist_map();
+	mtx.lock();
+    hist_map(hist);
+    mtx.unlock();
 	int x, y, key, selected_item;					/*center position*/
 	char *password, * gitid;
 	std::string packet;
@@ -349,7 +356,7 @@ int UI::messenger(void * ref) {
 			continue;
 		}
 
-		if(chat_room(x, selected_item) == 1) { 
+		if(chat_room(x, selected_item, hist, reff) == 1) { 
 			touchwin(stdscr);
         	refresh();
 			continue;
@@ -366,11 +373,11 @@ int UI::messenger(void * ref) {
 	
 	endwin();
 
-	return 0;
 }
 
 std::vector<std::string> UI::receiver(std::string recv) {
 
+	std::vector<std::string> msg_tot;
 	std::string str1, str2;
 	unsigned char check, len1, len2;
 
@@ -396,43 +403,55 @@ std::vector<std::string> UI::receiver(std::string recv) {
 			//list
 			
 		}
+		recv.erase(0, 3 + len1 + len2);
 	}
 
 	msg_tot.push_back(msg);
 	return msg_tot;
 }
 
-void UI::dist_to_hist(std::vector<std::string> vec){
+void UI::dist_to_hist(std::vector<std::string> vec, std::map<std::string, std::vector<std::string> > & hist){
 	unsigned int found;
 	for(std::vector<std::string>::iterator it = vec.begin() ; it != vec.end(); it++){
 		found = it->find(":");
 		std::string &msg = *it;
 		std::string name = it->substr(0, found -1);
+		mtx.lock();
 		for(std::map<std::string, std::vector<std::string> >::iterator at = hist.begin() ; at != hist.end(); at++){
 			if((at->first).compare(name) == 0){
 				(at->second).push_back(msg);
 			}
 		}
+		mtx.unlock();
 	}
 }
 
-int recv(void * ref) {
-
+void UI::recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 	std::vector<std::string> newmsg;
 
 //socket read
 
+	std::vector<std::string> newmsg;
 	std::string read_soc;
-
 	newmsg = receiver(read_soc);
+	mtx.lock();
+	if(reff == false){
+//Distribute newmsg to hist;
+		dist_to_hist(newmsg, hist);
+		reff = true;
+	}
+	mtx.unlock();
 
 }
 
 int main() {
-	bool ref = true;
-	std::vector<std::string> newmsg;
-	std::thread t1(messenger, &ref);
-	std::thread t2(recv, &ref);
+	bool reff = false;
+	std::string USER;
+	std::vector<std::string> userlist;
+	std::map<std::string, std::vector<std::string> > hist;
+
+	std::thread t1(messenger_UI, std::ref(hist), std::ref(reff));
+	std::thread t2(recv_UI, std::ref(hist), std::ref(reff));
 
 	t1.join();
 	t2.join();
