@@ -25,13 +25,17 @@ void send_list(std::string& host) {
     return;
   }
 
-  psocksxx::tcpnsockstream ss;
-  ss.connect(host.c_str(), NODE_PORT);
+  TCP_Client conn(host.c_str(), NODE_PORT);
+
   std::string buff;
   buff += LIST_PREFIX;
   buff += content;
   buff += LIST_POSTFIX;
-  ss << buff;
+
+  conn.send(buff);
+
+  conn.close();
+
 }
 
 void boradcast_listener() {
@@ -77,7 +81,6 @@ void boradcast_listener() {
     buf[bufLen] = 0;
     std::string buff(buf, bufLen);
     if (buff.substr(0, 2).compare(BROADCAST_PREFIX) == 0) {
-      //int size = buf[2];
       //int size = buf[2];
       int size = buff.size();
       if (buff.substr(size - 2, 2).compare(BROADCAST_POSTFIX) == 0) {

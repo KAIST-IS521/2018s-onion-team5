@@ -2,15 +2,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
 
-
-#include <psocksxx/udpnsockstream.h>
 #include "../common/config.h"
-
-#include <string>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
 
 void advertise(std::string github_id) {
   int sock;

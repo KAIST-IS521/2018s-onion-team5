@@ -21,4 +21,8 @@ public:
   bool listen(int backlog);
   TCP_Client * accept();
   void close();
+
+
+  bool timeout(time_t tv_sec, tv_usec tv_usec);
+  bool timeout(struct timeval timeout);
 };

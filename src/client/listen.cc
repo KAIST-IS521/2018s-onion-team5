@@ -7,63 +7,31 @@
 #include "../common/node.pb.h"
 #include "../common/dumphex.h"
 #include "../common/sha1.hpp"
+#include "../common/tcp_server.h"
+#include "../common/tcp_client.h"
 #include "listen.h"
 
 
 void listener(std::string github_id, std::map<std::string, std::string> &list) {
-  int sock;
-	struct sockaddr_in servAddr;
-  int servPort = 9099;
+  TCP_Server server("0.0.0.0", 9099);
 
-	// socket
-	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (!server.bind()) {
+    return;
+  }
+  std::cout << "Ok to bind" << std::endl;
 
-	memset(&servAddr, 0, sizeof(servAddr));
-	servAddr.sin_family = AF_INET;
-	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servAddr.sin_port = htons(servPort);
+  if (!server.listen()) {
+    return;
+  }
+  std::cout << "Ok to listen" << std::endl;
 
-	// BINDING
-	bind(sock, (struct sockaddr *) &servAddr, sizeof(servAddr));
-
-	// LISTEN
-	listen(sock, 100);
-
-  std::cout << "LISTEN 9099" << std::endl;
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 	for (;;) {
-    int clnt;
-		struct sockaddr_in clntAddr;
-		int len = sizeof(clntAddr);
-		char client_ip[32];
-		int clinet_port;
-
-    clnt = accept(sock, (struct sockaddr * ) &clntAddr, (socklen_t *)&len);
-    std::cout << "ACCEPT" << std::endl;
-
-    //std::string buf;
-    //buf.resize(4096);
-    char buf[4096 + 1];
-    memset(buf, 0, 4096 + 1);
-    int bufLen = 0;
-		//int size = (* css).tellg();
-
-    puts("asdf");
-    if ((bufLen = recv(sock, buf, 4096, 0)) < 0) {
-      // error handling
-    }
-    puts("asdf");
-
-    DumpHex(buf, bufLen);
+    TCP_Client * client = server.accept();
 
     std::string msg;
-    msg.assign(buf, bufLen);
+    int size = client->recv(msg);
     DumpHex(msg);
-    puts("asdf");
-
-
-    std::cout << msg.size() << std::endl;
-    std::cout << "GET" << std::endl;
 
     // node list
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
@@ -102,10 +70,7 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
         msg = PONG_PREFIX + msg + PONG_POSTFIX;
         DumpHex(msg);
 
-        int bufLen = msg.size();
-
-        //(*css) << msg;
-        if (send(sock, &msg[0], bufLen, 0) != bufLen)
+        if (client->send(msg) != msg.size())
         {
           // error handling
         }
@@ -118,6 +83,8 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
     }
 
 		//delete css;
+
 	}
+  server.close();
   google::protobuf::ShutdownProtobufLibrary();
 }

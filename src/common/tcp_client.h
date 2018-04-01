@@ -2,6 +2,8 @@
 
 #include <string>
 #include <netinet/in.h>
+#include <sys/time.h>
+
 
 class TCP_Client {
   bool client;
@@ -24,4 +26,5 @@ public:
   int send(std::string data);
   int recv(std::string &data);
   void close();
+
 };
