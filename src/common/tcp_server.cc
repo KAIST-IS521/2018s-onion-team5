@@ -67,7 +67,7 @@ void TCP_Server::close() {
   ::close(this->sock);
 }
 
-bool TCP_Server::timeout(time_t tv_sec, tv_usec tv_usec) {
+bool TCP_Server::timeout(long tv_sec, long tv_usec) {
   struct timeval timeout;
   timeout.tv_sec = tv_sec;
   timeout.tv_usec = tv_usec;
@@ -76,12 +76,12 @@ bool TCP_Server::timeout(time_t tv_sec, tv_usec tv_usec) {
 }
 
 bool TCP_Server::timeout(struct timeval timeout) {
-  if (setsockopt (this->client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+  if (setsockopt (this->sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
     perror("setsockopt");
     return false;
   }
 
-  if (setsockopt (this->client_sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+  if (setsockopt (this->sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
     perror("setsockopt");
     return false;
   }

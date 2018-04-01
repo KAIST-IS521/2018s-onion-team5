@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
-#include <psocksxx/tcpnsockstream.h>
+//#include <psocksxx/tcpnsockstream.h>
 #include <string>
 #include <unistd.h>
 #include <iostream>
@@ -11,12 +11,12 @@
 #include "../common/config.h"
 #include "../common/http_client.h"
 #include "../common/dumphex.h"
+#include "../common/tcp_client.h"
 
 #include "rest_client.h"
 #include "node_manage.h"
 
 void send_list(std::string& host) {
-  // fetch node list from server
   std::string content;
 
   content = Client_REST::get_nodes();
@@ -32,29 +32,29 @@ void send_list(std::string& host) {
   buff += content;
   buff += LIST_POSTFIX;
 
+  conn.connect();
   conn.send(buff);
-
   conn.close();
-
 }
 
 void boradcast_listener() {
   NodeManage m;
-
   int s, flag;
   struct sockaddr_in bcastAddr;
 
   s = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (s == NULL) {
-    perror("socker");
+    perror("sockek");
     exit(1);
   }
+  puts("[BROADCAST] socket OK");
 
   flag = 1;
   if (setsockopt (s, SOL_SOCKET, SO_BROADCAST, &flag, sizeof flag) == -1) {
     perror("setsockopt");
     exit(1);
   }
+  puts("[BROADCAST] setsockopt OK");
 
   memset(&bcastAddr, 0, sizeof(bcastAddr));
   bcastAddr.sin_family = AF_INET;
@@ -65,6 +65,7 @@ void boradcast_listener() {
     perror("bind");
     exit(1);
   }
+  puts("[BROADCAST] BIND OK");
 
   for (;;) {
     struct sockaddr_in clntAddr;
@@ -78,17 +79,19 @@ void boradcast_listener() {
 			perror("recvfrom");
       exit(1);
     }
+
     buf[bufLen] = 0;
     std::string buff(buf, bufLen);
     if (buff.substr(0, 2).compare(BROADCAST_PREFIX) == 0) {
       //int size = buf[2];
       int size = buff.size();
       if (buff.substr(size - 2, 2).compare(BROADCAST_POSTFIX) == 0) {
-        github_id = buff.substr(3, size - 5);
+        github_id = buff.substr(2, size - 4);
       }
     }
 
     if (!github_id.empty()) {
+      puts("recvfrom");
       ip_addr = inet_ntoa(clntAddr.sin_addr);
 
       github_id.erase(std::find_if(github_id.rbegin(), github_id.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), github_id.end());

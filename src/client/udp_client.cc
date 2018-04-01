@@ -30,7 +30,7 @@ void advertise(std::string github_id) {
   std::string buf;
 
   buf += BROADCAST_PREFIX;
-  buf += (char) github_id.size();
+  //buf += (char) github_id.size();
   buf += github_id;
   buf += BROADCAST_POSTFIX;
 

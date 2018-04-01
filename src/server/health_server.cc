@@ -1,10 +1,12 @@
 #include "health_server.h"
 
 #include <time.h>
-#include <psocksxx/tcpnsockstream.h>
+//#include <psocksxx/tcpnsockstream.h>
 #include <string>
 #include <cstdio>
+#include <unistd.h>
 
+#include "../common/tcp_client.h"
 #include "../common/config.h"
 #include "../common/node.pb.h"
 #include "../common/sha1.hpp"
@@ -22,7 +24,7 @@ void health_server() {
       const Onion5::Node& node = node_list.nodes(i);
 
       std::string key = random_string(32);
-      std::string buffer;
+
 
       std::string github_id = node.github_id();
       std::string ip_addr = node.ip_addr();
@@ -32,18 +34,21 @@ void health_server() {
       DumpHex(github_id);
       DumpHex(ip_addr);
 
-      psocksxx::tcpnsockstream ss;
-      try {
-        ss.timeout(3, 0);
-        ss.connect(ip_addr.c_str(), NODE_PORT);
-        flag = true;
-      } catch ( psocksxx::sockexception &e ) {
-        flag = false;
+      TCP_Client sock(ip_addr.c_str(), NODE_PORT);
+
+      sock.timeout(3, 0);
+      if (sock.connect()) {
+          flag = true;
       }
 
       if (flag) {
         flag = false;
-        ss << PING_PREFIX << key << PING_POSTFIX <<std::endl;
+
+        std::string data;
+        data += PING_PREFIX;
+        data += key;
+        data += PING_POSTFIX;
+        sock.send(data);
 
         std::string msg;
 
@@ -59,7 +64,10 @@ void health_server() {
 
         DumpHex(msg);
 
-        ss >> buffer;
+        std::string buffer;
+        if (sock.recv(buffer) > 0) {
+
+        }
         DumpHex(buffer);
 
 

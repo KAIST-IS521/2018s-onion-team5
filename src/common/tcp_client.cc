@@ -64,12 +64,15 @@ bool TCP_Client::connect() {
 
 int TCP_Client::send(std::string data) {
   size_t payload_size = data.size();
+  printf("SEND payload_size: %d\n", payload_size);
   size_t temp = BSWAP64(payload_size);
   unsigned char type = 0;
    // send type
   if (this->write(&type, sizeof(unsigned char)) == -1) {
 
   }
+  printf("SEND type: %d\n", type);
+
   // send size
   if (this->write(&temp, sizeof(size_t)) == -1) {
 
@@ -92,6 +95,47 @@ int TCP_Client::send(std::string data) {
   return offset;
 }
 
+int TCP_Client::send_file(std::string path) {
+  unsigned char type = 1;
+   // send type
+  if (this->write(&type, sizeof(unsigned char)) == -1) {
+
+  }
+
+  size_t payload_size = get_file_size(path);
+  size_t temp = BSWAP64(payload_size);
+
+  // send size
+  if (this->write(&temp, sizeof(size_t)) == -1) {
+
+  }
+
+  //const char *ptr = data.c_str();
+  std::ifstream is;
+  is.open(path, std::ifstream::binary);
+  int offset = 0;
+  while (offset < payload_size) {
+    //int length = BUFSIZ < (payload_size - offset)? BUFSIZ: (payload_size - offset);
+
+    char buff[BUFSIZ + 1];
+    memset(buff, 0, BUFSIZ + 1);
+
+    is.read(buff, BUFSIZ);
+
+    int length = is.gcount();
+
+    int written_bytes = this->write((void *) buff, length);
+    if (written_bytes == -1) {
+      // Error occured
+      break;
+    }
+    offset += written_bytes;
+  }
+
+  return offset;
+}
+
+
 int TCP_Client::recv(std::string &data) {
   std::string retval;
 
@@ -108,9 +152,15 @@ int TCP_Client::recv(std::string &data) {
   }
 
   size_t payload_size = BSWAP64(temp);
+
   int offset = 0;
   char buff[BUFSIZ + 1];
-  printf("payload_size: %d\n", payload_size);
+  if (type == 1) {
+    std::ofstream os;
+    retval = get_temppath();
+    os.open(retval, std::ofstream::binary);
+  }
+
   while (offset < payload_size) {
     ::memset(buff, 0, BUFSIZ + 1);
     int read_bytes = this->read(buff, BUFSIZ);
@@ -119,12 +169,21 @@ int TCP_Client::recv(std::string &data) {
       // Error occured
       break;
     }
-    retval.append(buff, read_bytes);
+
+    if (type == 0) {
+      retval.append(buff, read_bytes);
+    } else if (type == 1) {
+       os.write(buff, read_bytes);
+    }
     offset += read_bytes;
   }
-  printf("offset: %d\n", offset);
+
+  if (type == 1) {
+     os.close();
+  }
 
   data = retval;
+
   return offset;
 }
 
@@ -134,4 +193,26 @@ void TCP_Client::close() {
   this->port = 0;
   ::close(this->client_sock);
   memset(&this->client_sockaddr, 0, sizeof(struct sockaddr_in));
+}
+
+
+bool TCP_Client::timeout(long tv_sec, long tv_usec) {
+  struct timeval timeout;
+  timeout.tv_sec = tv_sec;
+  timeout.tv_usec = tv_usec;
+
+  return this->timeout(timeout);
+}
+
+bool TCP_Client::timeout(struct timeval timeout) {
+  if (setsockopt (this->client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+    perror("setsockopt");
+    return false;
+  }
+
+  if (setsockopt (this->client_sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+    perror("setsockopt");
+    return false;
+  }
+  return true;
 }

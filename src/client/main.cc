@@ -21,13 +21,11 @@
 #include "gpg_wrapper.h"
 #include "message_wrapper.h"
 
-void test(std::string &test) {
-
+void adver_loop(std::string &name) {
   while (true) {
-    std::cout << "In thread: " << test << std::endl;
-    sleep(1);
+    advertise(name);
+    sleep(5);
   }
-
 }
 
 int main(int argc, char *argv[]) {
@@ -52,14 +50,13 @@ int main(int argc, char *argv[]) {
   std::cout << "Loggined" << std::endl;
 
   std::string input;
-  //std::thread thread_listener(listener, std::ref(node_list));
-  std::thread thread_listener(listener, name, std::ref(node_list));
 
-  while (true) {
-    advertise(name);
-    std::cout << node_list.size() << std::endl;
-    sleep(1);
-  }
+  std::thread thread_listener(listener, name, std::ref(node_list));
+  std::thread thread_advertise(adver_loop, name);
+  std::thread thread_input(adver_loop, name);
+
+  thread_listener.join();
+  thread_advertise.join();
 
   exit(1);
 

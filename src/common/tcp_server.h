@@ -23,6 +23,6 @@ public:
   void close();
 
 
-  bool timeout(time_t tv_sec, tv_usec tv_usec);
+  bool timeout(long tv_sec, long tv_usec);
   bool timeout(struct timeval timeout);
 };

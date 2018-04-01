@@ -11,6 +11,8 @@
 #include "../common/tcp_client.h"
 #include "listen.h"
 
+#include <stdio.h>
+
 
 void listener(std::string github_id, std::map<std::string, std::string> &list) {
   TCP_Server server("0.0.0.0", 9099);
@@ -31,12 +33,14 @@ void listener(std::string github_id, std::map<std::string, std::string> &list) {
 
     std::string msg;
     int size = client->recv(msg);
+    puts("===============================================================");
     DumpHex(msg);
+    puts("===============================================================");
 
     // node list
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
       int len = msg.size();
-      if (msg.substr(len - 2, 2).compare(LIST_PREFIX) == 0) {
+      if (msg.substr(len - 2, 2).compare(LIST_POSTFIX) == 0) {
         Onion5::NodeList node_list;
         msg = msg.substr(2, len - 4);
         node_list.ParseFromString(msg);

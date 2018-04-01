@@ -44,14 +44,17 @@ int main(int argc, char *argv[]) {
 
   printf("%d %d %d\n", rest, broadcast, health);
 
-  if (rest)
-  FORK_AND_RUN(rest_server);
+  if (rest) {
+    FORK_AND_RUN(rest_server);
+  }
 
-  if (broadcast)
-  FORK_AND_RUN(boradcast_listener);
+  if (broadcast) {
+    FORK_AND_RUN(boradcast_listener);
+  }
 
-  if (health)
-  FORK_AND_RUN(health_server);
+  if (health) {
+    FORK_AND_RUN(health_server);
+  }
 
   wait(&status);
   return 0;

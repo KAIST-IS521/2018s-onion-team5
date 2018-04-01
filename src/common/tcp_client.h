@@ -27,4 +27,6 @@ public:
   int recv(std::string &data);
   void close();
 
+  bool timeout(long tv_sec, long tv_usec);
+  bool timeout(struct timeval timeout);
 };

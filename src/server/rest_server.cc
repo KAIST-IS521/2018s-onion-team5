@@ -36,6 +36,7 @@ void rest_server() {
 		std::cerr << "bind error: " << e.what() << std::endl;
 		return;
 	}
+  puts("[REST] BIND OK");
 
 	try {
 		ss.listen();
@@ -43,9 +44,14 @@ void rest_server() {
 		std::cerr << "listen error: " << e.what() << std::endl;
 		return;
 	}
+
+  puts("[REST] LISTEN OK");
+
+
   psocksxx::nsockstream *cs;
   while (true) {
     cs = ss.accept();
+    puts("[REST] ACCEPT");
     request_handler(cs, m);
   }
 
@@ -78,7 +84,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
   std::regex ipv4_address_regex("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
 
   if (method.compare("GET") == 0 && uri.compare("/users") == 0) {
-    // curl http://localhost:8081/users
+    // curl http://localhost:31337/users
     std::string header;
     std::string content = m.get_binary();
     header += "HTTP/1.0 200 OK\r\n";
@@ -86,6 +92,7 @@ void request_handler(psocksxx::nsockstream *conn, NodeManage& m) {
     header += "\r\n";
     (*conn) << header << content;
   } else if (method.compare("POST") == 0 && uri.compare("/users") == 0) {
+    // curl http://localhost:31337/users -d ""
     std::string temp;
     int content_size = 0;
     do {
