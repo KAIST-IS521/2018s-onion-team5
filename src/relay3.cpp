@@ -87,15 +87,13 @@ std::string pack_total(std::string str1, std::string str2, int sel) {
 struct client {
 	/* The clients socket. */
 	int 		fd;
-	int			fd2;
 	int 		fd_ui;
 	FILE 		*fp;
-	//int ui;
 	char 		file_name[char_len];
 	/* The bufferedevent for this client. */
 	struct 	bufferevent *buf_ev;
-	struct 	bufferevent *buf_ev2;
-	struct evbuffer *ev_buff;
+	std::string github_id;
+	std::string passphrase;
 };
 
 /**
@@ -170,7 +168,7 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 			str2 = recv.substr(len1 + 3, len2);
 
 			if (check == '0') {
-				// MSG
+				// string msg
 				do {
 					rand_string(temp_file_name, char_len);
 					printf("temp_f_name: %s\n", temp_file_name);
@@ -203,6 +201,7 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 			}
 			else if (check == '1') {
 				// FILE
+
 				//TODO:
 				//str2 메세지 저장. enc에 str2 파일 경로 넣는다. 암호 넣는다. type 입력한다.
 				//str1이 마지막 데스티네이션, 내가 첫번째가 되도록 vector를 만든다.
@@ -210,15 +209,19 @@ buffered_on_read_ui(struct bufferevent *bev, void *arg)
 				//파일 삭제 하지 않음.
 				
 			}
+			/* TODO: 안해도됨. 프로그램 시작하자마자 받음.
 			else if (check == '3') {
 				//ID + PASSPHRASE
-				//TODO:
+
 				//UI로부터 ID, PASSPHRASE받고 올바르면 client->github_id, client->passphrase에 저장.
 				//틀리면 exit(-1);
+				//gpg verify 함수 필요.
 
 			}
+			*/
 			else if (check == '4') {
 				//NODE LIST
+
 				//TODO:
 				//msg 받아서 nodelist로 파싱 후 전역 변수 nodelist에 덮어씌움.
 			}
@@ -556,6 +559,7 @@ void relay()
 	socklen_t client_len2;
 	struct client *client_ui;
 	struct client *client_relay;
+	char id_pw_buff[300] = {0, };
 
 	srand(time(NULL));
 
@@ -618,6 +622,19 @@ void relay()
 	
 	client_ui->fd_ui = accept(listen_fd2, (struct sockaddr *)&listen_addr2, &client_len2);
 	client_relay->fd_ui = client_ui->fd_ui;
+
+	//UI와 소켓 연결 맺고, UI에서 아디, 비번 치기전까지 블록.
+	read(client_ui->fd_ui, id_pw_buff, 300);
+	//TODO:
+	//id_pw_buff 파싱해서, 아이디 비번 도출 후 gpg_verify에 집어넣고 맞는지 검증
+	//맞으면 client_ui->github_id, client_ui->passphrase에 집어넣음. 틀리면 exit(-1);
+
+
+	//TODO:
+	//listner 구현??
+	//listner(client_ui->github_id, ?, ?);
+	//내 생각: 서버에게 connect 보내서 소켓 열고, 이벤트 등록해서 논블록킹으로 구동.
+
 
 	/* Set the socket to non-blocking, this is essential in event
 	 * based programming with libevent. */
