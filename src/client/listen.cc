@@ -46,11 +46,13 @@ void liste_loop(Messenger &msgr) {
 
     // node list
 
+    /*
     if (msg.substr(0, 2).compare("\x2F\x74") == 0) {
       DumpHex(msg);
       std::string cmdasdfasd = "xxd "+ msg;
       system(cmdasdfasd.c_str());
     }
+    */
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
       std::cout << "LIST" << std::endl;
       int len = msg.size();
