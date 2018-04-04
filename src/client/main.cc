@@ -1,7 +1,10 @@
-
+#include <iostream>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <thread>
+
+#include <unistd.h>
 
 #include <time.h>
 
@@ -21,7 +24,7 @@
 void adver_loop(std::string name) {
   while (true) {
     advertise(name);
-    sleep(5);
+    ::sleep(5);
   }
 }
 
