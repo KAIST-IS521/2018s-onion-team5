@@ -1,30 +1,70 @@
-#include "ui.h"
+#include "ui.hpp"
+
 //Test
 
-UI::UI(){}
-
-void UI::init_testset() {
-
-	userlist.push_back("");
-	userlist.push_back("TestUser1");
-	userlist.push_back("TestUser2");
-	userlist.push_back("TestUser3");
-	userlist.push_back("TestUser4");
+UI::UI(){
+	this->clear();
 }
 
-void UI::hist_map()
-{
-	init_testset();
-	for(int i = 0; i < userlist.size(); i++)
-	{
-		std::vector<std::string> history;
-		hist[userlist[i]] = history;
-	}
+void UI::clear() {
+	
+	this->USER = new char[80];
+	this->PASSWORD = new char[80];
 
+	this->userlist.clear();
+	this->hist.clear();
+}
+
+void UI::get_USER(char * id){
+	this->USER = id;
+}
+
+void UI::get_PASSWORD(char * password){
+	this->PASSWORD = password;
+}
+
+//userlist
+/*
+void UI::set_userlist(){
+	
+
+}
+*/
+
+void UI::set_userlist(){
+	this->userlist.push_back("TestUser1");
+	this->userlist.push_back("TestUser2");
+	this->userlist.push_back("TestUser3");
+	this->userlist.push_back("TestUser4");
+}
+
+void UI::set_hist(std::vector<std::string> userlist) {
+	for(int i = 0; i < userlist.size(); i++){
+		std::vector<std::string> history;
+		this->hist[userlist[i]] = history;
+	}
+}
+
+void UI::store_hist(std::string message, std::string receiver){
+	this->hist[receiver].push_back(message);
+}
+
+void UI::show_hist(std::vector<std::string> * history, WINDOW * chat) {
+	int offset = 0;
+	std::string msg;
+
+	if(hist.size() != 0){
+		for(int i = 0; i < history->size(); i++) {
+			msg = *(history->begin() + i);
+			mvwprintw(chat, offset, 0, "%s", msg.c_str());
+			offset += msg.size() / 40 + 1;
+		}	
+		wnoutrefresh(chat);
+		doupdate();
+	}
 }
 
 void UI::init_scr() {
-
 	initscr();
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLACK);
@@ -36,7 +76,7 @@ void UI::init_scr() {
 	keypad(stdscr, TRUE);
 }
 
-int UI::check_quit(int x)
+int UI::check_quit(int x)		//Todo : int y
 {
     WINDOW * check;
     int key;
@@ -54,8 +94,7 @@ int UI::check_quit(int x)
         return 0;
 }
 
-
-WINDOW ** UI::test_list(int start_col, int len)
+WINDOW ** UI::make_list(int start_col, int len)
 {
     int i;
     WINDOW **items;
@@ -73,7 +112,7 @@ WINDOW ** UI::test_list(int start_col, int len)
     return items;
 }
 
-int UI::scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num, int x)
+int UI::scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num, int x)  //Todo : int y
 {
     int key;
     int selected = 0;
@@ -127,35 +166,13 @@ WINDOW ** UI::chat_form(int selected_item, int start_col){
 	wbkgd(chat_items[3], COLOR_PAIR(4));
 	wrefresh(chat_items[0]);
 	return chat_items;
-
 }
-
-std::string UI::pack_total(std::string str1, std::string str2, int sel){
-
-	std::string packet;
-	if(sel == 0){
-		packet += '0';
-	}
-	else if(sel == 1)
-		packet += '1';
-	else if(sel == 3)
-		packet += '3';
-	else if(sel == 4);
-	packet += str1.size();
-	packet += str1;
-	packet += str2.size();
-	packet += str22;
-
-	return packet;
-}
-
+//Todo : int y
 int UI::chat_room(int x, int selected_item) {
 
-	std::vector<std::string> * history = & hist[userlist[selected_item]];
-	int key, offset;
-	int sel - 0;
+	int key;
 	char * message;
-	std::string msg_total, show_msg;
+	std::string msg_total;
 
 	message = new char[200];
 	WINDOW ** chat;
@@ -163,25 +180,18 @@ int UI::chat_room(int x, int selected_item) {
 
 	while(1){
 		memset(message, 0, 200);
-		msg_total = USER + ": ";
-		if(history->size() != 0) {
-			offset = 0;
-			for(int i = 0; i < history->size(); i++) {
-				show_msg = *(history->begin() + i);
-				mvwprintw(chat[2], offset, 0, "%s", show_msg.c_str());
-				offset += show_msg.size() / 40 + 1;
-			}	
-			wnoutrefresh(chat[2]);
-			doupdate();
-		}
+		msg_total = this->USER;
+		msg_total += ": ";
+		show_hist(&this->hist[this->userlist[selected_item]], chat[2]);
 
 		mvwprintw(chat[3], 0, 0, ">>");
-		echo();
+		noecho();
 		for(int i = 0; i < 199; i ++){
 			keypad(chat[3], TRUE);
 			key = wgetch(chat[3]);
 			if ( key == ESCAPE) {
 				if(i == 0) {
+					//delete message;
 					delete chat;
 					return 1;
 				}
@@ -214,6 +224,7 @@ int UI::chat_room(int x, int selected_item) {
 			{
 				if(i == 0){
 					message[i] = 0;
+					i = -1;
 					continue;
 				}
 				else {
@@ -239,7 +250,6 @@ int UI::chat_room(int x, int selected_item) {
 			else if( key == KEY_F(2) && i == 0)
 			{
 				echo();
-				sel = 1;
 				mvwprintw(chat[3], 0, 0, "file?: ");
 				wgetnstr(chat[3], message, 199);
 				for(int z = 0; z < 199; z++){
@@ -263,27 +273,21 @@ int UI::chat_room(int x, int selected_item) {
 		std::string msg(message);
 		msg_total += message;
 //Store in history
-		hist[userlist[selected_item]].push_back(msg_total);
-		//sockect send
-		msg_send = pack_total(userlist[selected_item], msg_total, sel);
-		write(fd, msg_send.c_str(), msg_send.size());
-		sel = 0;
+		store_hist(msg_total, this->userlist[selected_item]);
 		memset(message, 0, 200);
-
 	}
 	delete message;
 }
 
-int UI::messenger(void * ref) {
-
-    hist_map();
+void UI::messenger_UI () {
+	set_userlist();
+	set_hist(this->userlist);
 	int x, y, key, selected_item;					/*center position*/
-	char *password, * gitid;
-	std::string packet;
-	unsigned int list_size = userlist.size() - 1;
+	char * password, * id;
+	unsigned int list_size = this->userlist.size() - 1;
 
 	password = new char[80];
-	gitid = new char[80];
+	id = new char[80];
 
 	//Todo : socket open
 	//getlist
@@ -298,47 +302,22 @@ int UI::messenger(void * ref) {
 	echo();
 	mvwprintw(passwindow, 1, 5, "Enter the ID: ");
 	wmove(passwindow, 1, 20);
-	wgetnstr(passwindow, gitid, 80);
-	USER = gitid;
+	wgetnstr(passwindow, id, 80);
+	get_USER(id);
 	noecho();
 	mvwprintw(passwindow, 3, 5, "Passphrase: ");
 	wmove(passwindow, 3, 18);
 	wgetnstr(passwindow, password, 80);
-
-	packet = id_total(gitid, password, 3);
-
-	int client_len;
-	int n = -1;
-
-	struct sockaddr_in serveraddr;
-
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
-		perror("socket");
-
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
-	serveraddr.sin_port = htons(5556);
-	client_len = sizeof(serveraddr);
-
-	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
-		perror("connect error :");
-	write(fd, packet.c_str(), packet.size());
-
-//	read(fd, list, listsize)
+	get_PASSWORD(password);
 
 	delwin(passwindow);
-	delete password;
 	touchwin(stdscr);
 	refresh();
-	
-	//socket open
-
-	//connect to relay
 
 	while(1){
 		noecho();
 		WINDOW ** user_list;
-		user_list = test_list(x/2 - 20, userlist.size());
+		user_list = make_list(x/2 - 20, list_size + 1);
 		selected_item = scroll_menu(user_list, list_size, 0, 1, x);
 
 		if(selected_item == -1)
@@ -363,88 +342,49 @@ int UI::messenger(void * ref) {
         refresh(); 
         delete user_list;
 	}
-	
 	endwin();
-
-	return 0;
+	delete id;
+	delete password;
 }
 
-std::vector<std::string> UI::receiver(std::string recv) {
+// void UI::dist_to_hist(std::vector<std::string> vec, std::map<std::string, std::vector<std::string> > & hist){
+// 	unsigned int found;
+// 	for(std::vector<std::string>::iterator it = vec.begin() ; it != vec.end(); it++){
+// 		found = it->find(":");
+// 		std::string &msg = *it;
+// 		std::string name = it->substr(0, found -1);
+// 		mtx.lock();
+// 		for(std::map<std::string, std::vector<std::string> >::iterator at = hist.begin() ; at != hist.end(); at++){
+// 			if((at->first).compare(name) == 0){
+// 				(at->second).push_back(msg);
+// 			}
+// 		}
+// 		mtx.unlock();
+// 	}
+// }
 
-	std::string str1, str2;
-	unsigned char check, len1, len2;
+// void UI::recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
+// 	std::vector<std::string> newmsg;
 
-	while(!recv.empty()){
-		check = recv[0];
-		len1 = recv[1];
-		str1 = recv.substr(2, len1);
-		len2 = recv[2+len];
-		str2 = recv.substr(len1 + 3, len2);
-		if(check == '0'){
-			
-			msg_tot.push_back(str2);
+// //socket read
 
-		}
-		else if(check == '1'){
-			str2.replace(str.find(":") + 2, str.end() - str.find(":") - 2, "sent file!");
-			msg_tot.push_back(str2);
-		}
-		else if(check == '3'){
-			continue
-		}
-		else if(check == '4'){
-			//list
-			
-		}
-	}
+// 	std::vector<std::string> newmsg;
+// 	std::string read_soc;
+// 	newmsg = receiver(read_soc);
+// 	mtx.lock();
+// 	if(reff == false){
+// //Distribute newmsg to hist;
+// 		dist_to_hist(newmsg, hist);
+// 		reff = true;
+// 	}
+// 	mtx.unlock();
 
-	msg_tot.push_back(msg);
-	return msg_tot;
-}
-
-void UI::dist_to_hist(std::vector<std::string> vec){
-	unsigned int found;
-	for(std::vector<std::string>::iterator it = vec.begin() ; it != vec.end(); it++){
-		found = it->find(":");
-		std::string &msg = *it;
-		std::string name = it->substr(0, found -1);
-		for(std::map<std::string, std::vector<std::string> >::iterator at = hist.begin() ; at != hist.end(); at++){
-			if((at->first).compare(name) == 0){
-				(at->second).push_back(msg);
-			}
-		}
-	}
-}
-
-int recv(void * ref) {
-
-	std::vector<std::string> newmsg;
-
-//socket read
-
-	std::string read_soc;
-
-	newmsg = receiver(read_soc);
-
-}
-
-int main() {
-	bool ref = true;
-	std::vector<std::string> newmsg;
-	std::thread t1(messenger, &ref);
-	std::thread t2(recv, &ref);
-
-	t1.join();
-	t2.join();
-
-	return 0;
-}
+// }
 
 UI::~UI()
 {
-	delete password;
-	delete message;
-	delete gitid;
-	userlist.clear();	
-	hist.clear();
+	delete this->USER;
+	delete this->PASSWORD;
+	this->userlist.clear();
+	this->hist.clear();
 }
