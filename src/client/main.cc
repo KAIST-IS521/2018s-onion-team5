@@ -18,7 +18,7 @@
 #include "gpg_wrapper.h"
 #include "message_wrapper.h"
 #include "yang_crypto.h"
-#include "messenger.h"
+#include "messanger.h"
 
 
 void adver_loop(std::string name) {
@@ -28,7 +28,7 @@ void adver_loop(std::string name) {
   }
 }
 
-bool send_message(std::string to, std::string content, Messenger &msgr) {
+bool send_message(std::string to, std::string content, Messanger &msgr) {
   std::map<std::string, std::string> node_list = msgr.get_node_list();
   GPG &g = msgr.getGPG();
   std::vector<std::string> route = generate_path(node_list, msgr.get_name(), to);
@@ -128,7 +128,7 @@ read_file(filename, xxxx);
   return true;
 }
 
-void input_loop(Messenger &msgr) {
+void input_loop(Messanger &msgr) {
   std::map<std::string, std::string> &node_list = msgr.get_node_list();
   while (true) {
     std::string user;
@@ -152,7 +152,7 @@ void input_loop(Messenger &msgr) {
 }
 
 int main(int argc, char *argv[]) {
-  Messenger msgr;
+  Messanger msgr;
 
   if (msgr.interact_cred() == false) {
     return 1;

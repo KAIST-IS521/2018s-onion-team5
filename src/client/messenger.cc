@@ -1,4 +1,4 @@
-#include "messenger.h"
+#include "messanger.h"
 #include <string>
 #include <map>
 #include <vector>
@@ -7,10 +7,10 @@
 
 #include "gpg_wrapper.h"
 
-Messenger::Messenger() { }
-Messenger::~Messenger() { }
+Messanger::Messanger() { }
+Messanger::~Messanger() { }
 
-bool Messenger::interact_cred() {
+bool Messanger::interact_cred() {
   std::string name;
   std::string passphrase;
 
@@ -28,14 +28,14 @@ bool Messenger::interact_cred() {
   return true;
 }
 
-std::string Messenger::get_name() {
+std::string Messanger::get_name() {
   return this->name;
 }
 
-GPG& Messenger::getGPG() {
+GPG& Messanger::getGPG() {
   return this->gpg;
 }
 
-std::map<std::string, std::string>& Messenger::get_node_list() {
+std::map<std::string, std::string>& Messanger::get_node_list() {
   return this->node_list;
 }

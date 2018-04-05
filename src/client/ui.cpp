@@ -279,7 +279,7 @@ int UI::chat_room(int x, int selected_item, std::map<std::string, std::vector<st
 	delete message;
 }
 
-void UI::messenger_UI (std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
+void UI::messanger_UI (std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 
 	mtx.lock();
     hist_map(hist);
@@ -453,7 +453,7 @@ int main() {
 
   UI ui;
 
-	std::thread t1(ui.messenger_UI, std::ref(hist), std::ref(reff));
+	std::thread t1(ui.messanger_UI, std::ref(hist), std::ref(reff));
 	std::thread t2(ui.recv_UI, std::ref(hist), std::ref(reff));
 
 	t1.join();

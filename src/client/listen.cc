@@ -10,14 +10,14 @@
 #include "../common/tcp_server.h"
 #include "../common/tcp_client.h"
 #include "../common/util.h"
-#include "messenger.h"
+#include "messanger.h"
 #include "listen.h"
 #include "message_wrapper.h"
 
 #include <stdio.h>
 
 
-void liste_loop(Messenger &msgr) {
+void liste_loop(Messanger &msgr) {
   //std::thread thread_liste(liste_loop, std::ref(msgr));
   std::string github_id = msgr.get_name();
   std::map<std::string, std::string> &list = msgr.get_node_list();

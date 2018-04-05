@@ -5,7 +5,7 @@ gpg_wrapper.o message_wrapper.o \
 ../common/config.o ../common/http_client.o \
 ../common/sha1.o ../common/util.o \
 ../common/tcp_server.o ../common/tcp_client.o \
-messenger.o
+messanger.o
 
 TARGET = Onion5_client
 LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread -levent -lcurses
@@ -31,8 +31,8 @@ clean:
 #buildfiles = main
 #removefiles = *.o
 
-#all : main.cpp messenger.o message.o pgp_crypto.o common.o
-#	$(CXX) -o main main.cpp messenger.cpp message.cpp pgp_crypto.c common.c
+#all : main.cpp messanger.o message.o pgp_crypto.o common.o
+#	$(CXX) -o main main.cpp messanger.cpp message.cpp pgp_crypto.c common.c
 
 #clean :
 #	$(RM) $(removefiles)

@@ -31,7 +31,7 @@ public :
 	WINDOW ** chat_form(int selected_item, int start_col);
 	std::string pack_total(std::string str1, std::string str2, int sel);
 	int chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff);
-	void messenger_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff);
+	void messanger_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff);
 	std::vector<std::string> receiver(std::string recv);
 	void dist_to_hist(std::vector<std::string> vec, std::map<std::string, std::vector<std::string> > & hist);
 	void recv_UI(std::map<std::string, std::vector<std::string> > & hist, bool & reff);
