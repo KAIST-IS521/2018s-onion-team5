@@ -40,85 +40,41 @@ bool send_message(std::string to, std::string content, Messanger &msgr) {
   std::string str_from = route[0];
   std::string str_to = route[route.size() - 1];
   std::string str_next = route[1];
-  route.pop_back();
 
-/*
   {
     Message m;
     m.setFrom(str_from);
     m.setTo(str_to);
     m.setContent(content);
+    //m.setFile("../01.Memory_And_Kernel_Intro.pdf");
     filename = m.serialize();
   }
 
   {
-    Message m;
-    std::string from2;
-    std::string to2;
-    std::string filename2;
-    from2 = str_to;
+    std::string temp_from;
+    std::string temp_to;
+    std::string temp_file;
+    Message temp_m;
 
-    int size = path.size();
+    temp_from = str_to;
+
+    int size = route.size();
 
     for (int i = 0; i < size; ++i) {
-      to2 = from2;
-      from2 = path.back();
-      path.pop_back();
+      temp_to = temp_from;
+      temp_from = route.back();
+      route.pop_back();
 
+      //temp_file = filename;
+      g.encrypt_file(filename, temp_to, temp_file);
 
-      if (g.encrypt_file(filename, to2, filename2) == false) {
-
-        return false;
-      }
-
-      m.setFrom(from2);
-      m.setTo(to2);
-      m.setBinary(filename2);
-      filename = m.serialize();
-      m.clear();
+      temp_m.setFrom(temp_from);
+      temp_m.setTo(temp_to);
+      temp_m.setBinary(temp_file);
+      filename = temp_m.serialize();
+      temp_m.clear();
     }
   }
-*/
-
-{
-    Message m;
-    m.setFrom(str_from);
-    m.setTo(str_to);
-    m.setContent(content);
-
-    filename = m.serialize();
-  }
-
-  std::string from2;
-  std::string to2;
-  std::string filename2;
-  Message m2;
-
-  from2 = to;
-
-  int size = route.size();
-  for (int i = 0; i < size; ++i){
-    to2 = from2;
-    from2 = route.back();
-    route.pop_back();
-
-#if 1
-    g.encrypt_file(filename, to2, filename2);
-#else
-    filename2 = filename;
-#endif
-    filename = filename2;
-
-    m2.setFrom(from2);
-    m2.setTo(to2);
-    m2.setBinary(filename2);
-    filename = m2.serialize();
-    m2.clear();
-  }
-
-  std::string xxxx;
-read_file(filename, xxxx);
-  DumpHex(xxxx);
 
   TCP_Client clnt(node_list[str_next], NODE_PORT);
   clnt.connect();

@@ -21,6 +21,7 @@ void liste_loop(Messanger &msgr) {
   //std::thread thread_liste(liste_loop, std::ref(msgr));
   std::string github_id = msgr.get_name();
   std::map<std::string, std::string> &list = msgr.get_node_list();
+  GPG &g = msgr.getGPG();
 
   TCP_Server server("0.0.0.0", 9099);
 
@@ -69,7 +70,7 @@ void liste_loop(Messanger &msgr) {
     }
     // health check
     else if (msg.substr(0, 2).compare(PING_PREFIX) == 0) {
-std::cout << "health" << std::endl;
+      std::cout << "health" << std::endl;
       int len = msg.size();
       if (msg.substr(len - 2, 2).compare(PING_POSTFIX) == 0) {
         std::string key = msg.substr(2, len - 4);
@@ -95,45 +96,76 @@ std::cout << "health" << std::endl;
       }
     } else if (is_existed_file(msg)) {
       Message m;
-      if (m.deserialize(msg)) {
-        GPG &g = msgr.getGPG();
-        std::string inin_file;
-        std::string outo_file;
-
-        inin_file = m.getContent();
-        std::cout << "==============================" << std::endl;
-        std::cout << inin_file << std::endl;
-        std::cout << m.getType() << std::endl;
-        std::cout << "==============================" << std::endl;
-
-        if (g.decrypt_file(inin_file, outo_file)) {
-          m.clear();
-          m.deserialize(outo_file);
-
-          std::cout << "From: " << m.getFrom() << std::endl;
-          std::cout << "to: " << m.getTo() << std::endl;
-          std::cout << "Type: " << m.getType() << std::endl;
-          std::cout << "content: " << m.getContent() << std::endl;
-          std::string to = m.getTo();
-          std::string from = m.getFrom();
-          std::string content = m.getContent();
-          if (github_id.compare(to) == 0 && m.getType() != 0) {
-            std::cout << from << ":" << content << std::endl;
-          } else {
-            if (github_id.compare(from) == 0 && m.getType() == 0) {
-              TCP_Client clnt(list[to], NODE_PORT);
-              clnt.connect();
-              clnt.send_file(content);
-              clnt.close();
-            } else {
-              // illegal packet
-            }
-          }
-        }
+      if (!m.deserialize(msg)) {
+        // illegal format
+        m.clear();
+        continue;
       }
+
+      std::cout << "from: " << m.getFrom() <<  std::endl;
+      std::cout << "to: " << m.getTo() <<  std::endl;
+      std::cout << "type: " << m.getType() <<  std::endl;
+      std::cout << "content: " << m.getContent() <<  std::endl;
+
+      if (github_id.compare(m.getTo()) != 0) {
+        // this is not my packet
+        std::cout << "[!] this is not my packet" << std::endl;
+        m.clear();
+        continue;
+      }
+
+      if (m.getType() != 0) {
+        // in this pharse it cannot be content or file
+        std::cout << "[!] in this pharse it cannot be content or file" << std::endl;
+        m.clear();
+        continue;
+      }
+
+      std::string filename = m.getContent();
+      m.clear();
+
+      if (!g.decrypt_file(filename, filename)) {
+        // in this pharse it cannot be content or file
+        std::cout << "[!] decrypt error" << std::endl;
+        m.clear();
+        continue;
+      }
+
+      m.deserialize(filename);
+      std::cout << "from2: " << m.getFrom() <<  std::endl;
+      std::cout << "to2: " << m.getTo() <<  std::endl;
+      std::cout << "type2: " << m.getType() <<  std::endl;
+      std::cout << "content2: " << m.getContent() <<  std::endl;
+
+      if (github_id.compare(m.getFrom()) == 0) {
+        filename = m.serialize();
+
+        std::cout << "[!] Relay to " << m.getTo() << std::endl;
+        TCP_Client clnt(list[m.getTo()], NODE_PORT);
+        clnt.connect();
+        clnt.send_file(filename);
+        clnt.close();
+
+        std::cout << "[!] Delete " << filename << std::endl;
+        delete_file(filename);
+        continue;
+      }
+
+      if (github_id.compare(m.getTo()) == 0) {
+        std::cout << "Oh! It's mine" << std::endl;
+        std::cout << "===============================" << std::endl;
+        std::cout << "from: " << m.getFrom() <<  std::endl;
+        std::cout << "to: " << m.getTo() <<  std::endl;
+        std::cout << "type: " << m.getType() <<  std::endl;
+        std::cout << "content: " << m.getContent() <<  std::endl;
+        std::cout << "===============================" << std::endl;
+        m.clear();
+        continue;
+      }
+
+      std::cout << "WTF" << std::endl;
+
     }
-
-
 	}
   server.close();
   google::protobuf::ShutdownProtobufLibrary();
