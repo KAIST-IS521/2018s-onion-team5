@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <thread>
 
 #define ESCAPE 27
 #define ENTER 10
@@ -21,6 +22,12 @@ private :
 
 public :
 	UI();
+
+  void init_testset();
+  void hist_map(std::map<std::string, std::vector<std::string> > & hist);
+  WINDOW ** test_list(int start_col, int len);
+  std::string pack_total(std::string str1, std::string str2, int sel);
+  int chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff);
 
 	void clear();
 	void get_USER(char * id);

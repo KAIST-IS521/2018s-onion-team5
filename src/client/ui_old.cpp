@@ -1,58 +1,13 @@
-#include "ui.h"
+#include "ui.hpp"
 //Test
+#include <iostream>
+#include <ncurses.h>
+#include <map>
+#include <unistd.h>
+#include <string>
+#include <vector>
+#include <cstdlib>
 
-UI::UI(){}
-
-void UI::init_testset() {
-
-	userlist.push_back("");
-	userlist.push_back("TestUser1");
-	userlist.push_back("TestUser2");
-	userlist.push_back("TestUser3");
-	userlist.push_back("TestUser4");
-}
-
-void UI::hist_map(std::map<std::string, std::vector<std::string> > & hist)
-{
-	init_testset();
-	for(int i = 0; i < userlist.size(); i++)
-	{
-		std::vector<std::string> history;
-		hist[userlist[i]] = history;
-	}
-
-}
-
-void UI::init_scr() {
-
-	initscr();
-	start_color();
-	init_pair(1, COLOR_WHITE, COLOR_BLACK);
-	init_pair(2, COLOR_WHITE, COLOR_BLUE);
-	init_pair(3, COLOR_BLACK, COLOR_YELLOW);
-	init_pair(4, COLOR_BLACK, COLOR_WHITE);
-	curs_set(2);
-	noecho();
-	keypad(stdscr, TRUE);
-}
-
-int UI::check_quit(int x)
-{
-    WINDOW * check;
-    int key;
-    check = newwin(3, 40, 3, x/2 - 20);
-    wmove(check, 1, 2);
-    wprintw(check, "Exit program (y/N) ? ");
-    wbkgd(check, COLOR_PAIR(2));
-    box(check, 0, 0);
-    refresh();
-    key = wgetch(check);
-    delwin(check);
-    if (key == 'y')
-        return -1;
-    else
-        return 0;
-}
 
 
 WINDOW ** UI::test_list(int start_col, int len)
@@ -128,25 +83,6 @@ WINDOW ** UI::chat_form(int selected_item, int start_col){
 	wrefresh(chat_items[0]);
 	return chat_items;
 
-}
-
-std::string UI::pack_total(std::string str1, std::string str2, int sel){
-
-	std::string packet;
-	if(sel == 0){
-		packet += '0';
-	}
-	else if(sel == 1)
-		packet += '1';
-	else if(sel == 3)
-		packet += '3';
-	else if(sel == 4);
-	packet += str1.size();
-	packet += str1;
-	packet += str2.size();
-	packet += str22;
-
-	return packet;
 }
 
 int UI::chat_room(int x, int selected_item, std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
@@ -281,67 +217,6 @@ int UI::chat_room(int x, int selected_item, std::map<std::string, std::vector<st
 
 void UI::messanger_UI (std::map<std::string, std::vector<std::string> > & hist, bool & reff) {
 
-	mtx.lock();
-    hist_map(hist);
-    mtx.unlock();
-	int x, y, key, selected_item;					/*center position*/
-	char *password, * gitid;
-	std::string packet;
-	unsigned int list_size = userlist.size() - 1;
-
-	password = new char[80];
-	gitid = new char[80];
-
-	//Todo : socket open
-	//getlist
-
-	init_scr();
-	getmaxyx(stdscr, y, x);
-
-	WINDOW * passwindow = newwin(6, 80, y/2 - 3, x/2 - 40);
-	refresh();
-	box(passwindow, 0, 0);
-	wbkgd(passwindow, COLOR_PAIR(3));
-	echo();
-	mvwprintw(passwindow, 1, 5, "Enter the ID: ");
-	wmove(passwindow, 1, 20);
-	wgetnstr(passwindow, gitid, 80);
-	USER = gitid;
-	noecho();
-	mvwprintw(passwindow, 3, 5, "Passphrase: ");
-	wmove(passwindow, 3, 18);
-	wgetnstr(passwindow, password, 80);
-
-	packet = id_total(gitid, password, 3);
-
-	int client_len;
-	int n = -1;
-
-	struct sockaddr_in serveraddr;
-
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
-		perror("socket");
-
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //TODO 깃허브 아이디 받아서 IP로 변환
-	serveraddr.sin_port = htons(5556);
-	client_len = sizeof(serveraddr);
-
-	if (connect(fd, (struct sockaddr *)&serveraddr, client_len) < 0)
-		perror("connect error :");
-	write(fd, packet.c_str(), packet.size());
-
-//	read(fd, list, listsize)
-
-	delwin(passwindow);
-	delete password;
-	touchwin(stdscr);
-	refresh();
-
-	//socket open
-
-	//connect to relay
-
 	while(1){
 		noecho();
 		WINDOW ** user_list;
@@ -449,7 +324,6 @@ int main() {
 	std::string USER;
 	std::vector<std::string> userlist;
 	std::map<std::string, std::vector<std::string> > hist;
-
 
   UI ui;
 
