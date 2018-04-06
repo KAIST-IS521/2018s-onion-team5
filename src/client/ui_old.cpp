@@ -8,60 +8,6 @@
 #include <vector>
 #include <cstdlib>
 
-
-
-WINDOW ** UI::test_list(int start_col, int len)
-{
-    int i;
-    WINDOW **items;
-
-    items = new WINDOW * [len];
-    items[0]=newwin(20, 40, 5, start_col);
-    wbkgd(items[0], COLOR_PAIR(3));
-    box(items[0], ACS_VLINE, ACS_HLINE);
-    for (i =1; i < len; i++){
-    	items[i] = subwin(items[0], 1, 17, 5 + i, start_col + 1);
-        wprintw(items[i], "%s", userlist[i].c_str());
-    }
-    wbkgd(items[1], COLOR_PAIR(2));
-    wrefresh(items[0]);
-    return items;
-}
-
-int UI::scroll_menu(WINDOW **items, int count, int menu_start_col, int index_num, int x)
-{
-    int key;
-    int selected = 0;
-    while (1)
-    {
-        key = getch();
-        if (key == KEY_DOWN || key == KEY_UP)
-        {
-            wbkgd(items[selected + 1], COLOR_PAIR(3));
-            wnoutrefresh(items[selected + 1]);
-            if (key == KEY_DOWN)
-            {
-                selected = (selected + 1) % count;
-            }
-            else
-            {
-                selected = (selected + count - 1) % count;
-            }
-            wbkgd(items[selected + 1],COLOR_PAIR(2));
-            wnoutrefresh(items[selected + 1]);
-            doupdate();
-        }
-        else if (key == ESCAPE)
-        {
- 	       return check_quit(x);
-        }
-        else if (key == ENTER)
-        {
-            return selected + 1;
-        }
-    }
-}
-
 WINDOW ** UI::chat_form(int selected_item, int start_col){
 
 	int key;
@@ -233,17 +179,9 @@ void UI::messanger_UI (std::map<std::string, std::vector<std::string> > & hist, 
 
 		if(chat_room(x, selected_item, hist, reff) == 1) {
 			touchwin(stdscr);
-        	refresh();
+      refresh();
 			continue;
 		}
-		else
-	    	touchwin(stdscr);
-        	refresh();
-			continue;
-
-        touchwin(stdscr);
-        refresh();
-        delete user_list;
 	}
 
 	endwin();

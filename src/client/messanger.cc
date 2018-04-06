@@ -28,6 +28,14 @@ bool Messanger::interact_cred() {
   return true;
 }
 
+void Messanger::set_name(std::string name) {
+  this->name = name;
+}
+
+void Messanger::set_passphrase(std::string passphrase) {
+  this->passphrase = passphrase;
+}
+
 std::string Messanger::get_name() {
   return this->name;
 }
