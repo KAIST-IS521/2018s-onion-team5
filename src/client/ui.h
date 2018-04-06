@@ -10,12 +10,14 @@
 #define KEY_ENTER2 10
 
 class UI {
-  Messanger msgr;
+  Messanger *msgr;
   int max_width;
   int max_height;
   std::map<std::string, std::vector<std::string>> chat;
+  std::vector<std::string> userlist;
+  WINDOW *current;
 public:
-  UI(Messanger &msg);
+  UI(Messanger *msg);
   ~UI();
   void init_scr();
   bool checkbox_quit();
@@ -23,6 +25,10 @@ public:
 
   void interface_thread();
 
-  //WINDOW **print_userlist();
   int select_user();
+  void chat_room(int idx);
+  void update_userlist();
+  void push_message(std::string name, std::string content);
+  void refresh_chatlog(std::string name);
+  std::map<std::string, std::vector<std::string>>& get_chat();
 };
