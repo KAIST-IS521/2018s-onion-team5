@@ -1,5 +1,5 @@
 #!/bin/bash
 gpg --import /root/key/*
 
-/root/onitok_client
+#/root/onitok_client
 /bin/bash

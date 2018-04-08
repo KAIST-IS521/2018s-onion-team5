@@ -16,8 +16,8 @@ std::string Client_REST::get_nodes() {
 }
 
 bool Client_REST::add_node(std::string github_id, std::string ip_address) {
-  DumpHex(github_id);
-  DumpHex(ip_address);
+  //DumpHex(github_id);
+  //DumpHex(ip_address);
   return HTTP::_post(
         Client_REST::base_url,
         "github_id=" + github_id + "&ip_address=" + ip_address);

@@ -1,14 +1,15 @@
 CC = g++
 OBJS = fetch_key.o listen.o udp_client.o  main.o\
 gpg_wrapper.o message_wrapper.o \
+messanger.o ui.o \
 ../common/dumphex.o ../common/node.pb.o \
 ../common/config.o ../common/http_client.o \
 ../common/sha1.o ../common/util.o \
-../common/tcp_server.o ../common/tcp_client.o \
-messanger.o
+../common/tcp_server.o ../common/tcp_client.o
+
 
 TARGET = Onion5_client
-LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread -levent -lcurses
+LIBS = -lprotobuf -lpsocksxx -lcurl -lpthread -lcurses
 CFLAGS= -std=c++11
 
 .SUFFIXES : .cc .o

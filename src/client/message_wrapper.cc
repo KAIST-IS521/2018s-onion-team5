@@ -96,8 +96,9 @@ std::string Message::serialize() {
     std::ifstream is;
     is.open(this->content, std::ifstream::binary);
     if (!is) {
-      std::cout << "fail to open" << std::endl;
+      //std::cout << "fail to open" << std::endl;
       // fail to open
+      return "";
     }
     while(!is.eof()) {
       char buff[1024 + 1] = {0};
@@ -122,12 +123,15 @@ bool Message::deserialize(std::string input) {
 
   std::ifstream is;
   is.open(input, std::ifstream::binary);
-  if (!is) {
-    std::cout << "fail to open y" << std::endl;
-  }
-
   char buff[1024 + 1] = {0};
   size_t read_size;
+
+
+  if (!is) {
+    //std::cout << "fail to open y" << std::endl;
+    goto END_DESERIALIZE;
+  }
+
 
   is.read(buff, 2);
   if (memcmp(buff, MESSAGE_PREFIX, 2) != 0) {
@@ -194,8 +198,9 @@ bool Message::deserialize(std::string input) {
     os.open(locate, std::ofstream::binary);
 
     if (!os) {
-      std::cout << "fail to open x" << std::endl;
+      //std::cout << "fail to open x" << std::endl;
       // fail to open
+      goto END_DESERIALIZE;
     }
     while(!is.eof()) {
       char buff[1024 + 1] = {0};

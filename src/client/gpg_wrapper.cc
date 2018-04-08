@@ -93,7 +93,7 @@ bool GPG::add_public_key(std::string locate) {
         0);
     perror("execlp");
   });
-  printf("status %d\n", status);
+  //printf("status %d\n", status);
 
   GPG_RET_CHECK({
     return true;
@@ -125,7 +125,7 @@ bool GPG::encrypt_file(std::string input_locate, std::string recipient, std::str
         0);
     perror("execlp");
   });
-  printf("status %d\n", status);
+  //printf("status %d\n", status);
 
   GPG_RET_CHECK({
     output_locate = temp_locate;
@@ -205,7 +205,7 @@ bool GPG::decrypt_file(std::string input_locate, std::string& output_locate) {
 
     perror("execlp");
   });
-  printf("status %d\n", status);
+  //printf("status %d\n", status);
 
   GPG_RET_CHECK({
     output_locate = temp_locate;

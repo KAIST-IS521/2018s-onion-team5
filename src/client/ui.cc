@@ -7,6 +7,7 @@
 #include <thread>
 #include <string>
 #include <unistd.h>
+#include "../common/dumphex.h"
 
 UI::UI(Messanger *msgr) {
   this->msgr = msgr;
@@ -80,17 +81,14 @@ bool UI::login_screen() {
 
   githubid = githubid.substr(0, githubid.find('\0'));
   password = password.substr(0, password.find('\0'));
-  //password.replace(password.begin(), password.end(), "\0", "");
 
-  GPG &g = this->msgr->getGPG();
-  bool ret = g.verify_passphrase(githubid, password);
-
-  if (ret) {
+  if (msgr->verify_passphrase(githubid, password)) {
     this->msgr->set_name(githubid);
     this->msgr->set_passphrase(password);
+    return true;
   }
 
-  return ret;
+  return false;
 }
 
 int UI::select_user() {
@@ -176,6 +174,7 @@ void UI::chat_room(int idx) {
   chat_window[1] = subwin(chat_window[0], 1, 40, 3, start_col + 2);
 	wbkgd(chat_window[1], COLOR_PAIR(3));
 	mvwprintw(chat_window[1], 0, 20 - name.size() / 2, "%s", name.c_str());
+  this->opened_current = name;
 
   // chatting log
   chat_window[2] = subwin(chat_window[0], 20, 40, 4, start_col + 2);
@@ -226,7 +225,7 @@ void UI::chat_room(int idx) {
       continue;
     } else if( key == KEY_ENTER2 ) {
       if (message.size() == 0) continue;
-      //this->msgr->send_message(name, message);
+      this->msgr->send_message(name, message);
       this->push_message(name, this->msgr->get_name() + ": " + message);
       message.clear();
       continue;
@@ -238,6 +237,7 @@ void UI::chat_room(int idx) {
   noecho();
 
   this->current = NULL;
+  this->opened_current.clear();
 
   for (int i = 3; i >= 0; --i) {
     delwin(chat_window[i]);
@@ -249,7 +249,7 @@ void UI::chat_room(int idx) {
 }
 
 void UI::refresh_chatlog(std::string name) {
-  if (this->current == NULL) {
+  if (this->current == NULL || this->opened_current.compare(name) != 0) {
     return;
   }
 
@@ -296,7 +296,6 @@ std::map<std::string, std::vector<std::string>>& UI::get_chat() {
 
 void UI::interface_thread() {
   this->init_scr();
-
   if (!this->login_screen()) {
     // login fail
     return;
@@ -306,6 +305,9 @@ void UI::interface_thread() {
     int idx;
     noecho();
     update_userlist();
+    if (this->userlist.empty()) {
+      continue;
+    }
     if ((idx = this->select_user()) < 0) {
       break;
     }
@@ -314,7 +316,8 @@ void UI::interface_thread() {
 
 }
 
-int main(int argc, char *argv[]) {
+/*
+int main(int argc, char *argv[]s) {
   Messanger m;
   UI cui(&m);
   std::map<std::string, std::string>&test = m.get_node_list();
@@ -328,3 +331,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+*/

@@ -65,27 +65,24 @@ bool TCP_Client::connect() {
 
 int TCP_Client::send(std::string data) {
   size_t payload_size = data.size();
-  printf("SEND payload_size: %d\n", payload_size);
   size_t temp = BSWAP64(payload_size);
   unsigned char type = 0;
-   // send type
   if (this->write(&type, sizeof(unsigned char)) == -1) {
-
+    return -1;
   }
-  printf("SEND type: %d\n", type);
 
   // send size
   if (this->write(&temp, sizeof(size_t)) == -1) {
-
+    return -1;
   }
 
   const char *ptr = data.c_str();
   int offset = 0;
   while (offset < payload_size) {
     int length = BUFSIZ < (payload_size - offset)? BUFSIZ: (payload_size - offset);
-    printf("length %d \n", length);
+    //printf("length %d \n", length);
     int written_bytes = this->write((void *) (ptr + offset), length);
-    printf("written_bytes %d \n", written_bytes);
+    //printf("written_bytes %d \n", written_bytes);
     if (written_bytes == -1) {
       // Error occured
       break;
@@ -100,7 +97,7 @@ int TCP_Client::send_file(std::string path) {
   unsigned char type = 1;
    // send type
   if (this->write(&type, sizeof(unsigned char)) == -1) {
-
+    return -1;
   }
 
   size_t payload_size = get_file_size(path);
@@ -108,7 +105,7 @@ int TCP_Client::send_file(std::string path) {
 
   // send size
   if (this->write(&temp, sizeof(size_t)) == -1) {
-
+    return -1;
   }
 
   //const char *ptr = data.c_str();
@@ -197,15 +194,15 @@ void TCP_Client::close() {
 }
 
 
-bool TCP_Client::timeout(long tv_sec, long tv_usec) {
+bool TCP_Client::s_timeout(long tv_sec, long tv_usec) {
   struct timeval timeout;
   timeout.tv_sec = tv_sec;
   timeout.tv_usec = tv_usec;
 
-  return this->timeout(timeout);
+  return this->s_timeout(timeout);
 }
 
-bool TCP_Client::timeout(struct timeval timeout) {
+bool TCP_Client::s_timeout(struct timeval timeout) {
   if (setsockopt (this->client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
     perror("setsockopt");
     return false;

@@ -28,6 +28,6 @@ public:
   int recv(std::string &data);
   void close();
 
-  bool timeout(long tv_sec, long tv_usec);
-  bool timeout(struct timeval timeout);
+  bool s_timeout(long tv_sec, long tv_usec);
+  bool s_timeout(struct timeval timeout);
 };

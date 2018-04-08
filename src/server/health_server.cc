@@ -19,7 +19,6 @@ void health_server() {
   while (true) {
     Onion5::NodeList node_list;
     node_list.ParseFromString(Client_REST::get_nodes());
-    printf("%d\n", node_list.nodes_size());
     for (int i = 0; i < node_list.nodes_size(); i++) {
       const Onion5::Node& node = node_list.nodes(i);
 
@@ -29,14 +28,16 @@ void health_server() {
       std::string github_id = node.github_id();
       std::string ip_addr = node.ip_addr();
 
+      std::cout << "[HEALTH] Let's check '" << github_id << "' (" << ip_addr << ")" << std::endl;
+
       bool flag = false;
 
-      DumpHex(github_id);
-      DumpHex(ip_addr);
+      //DumpHex(github_id);
+      //DumpHex(ip_addr);
 
       TCP_Client sock(ip_addr.c_str(), NODE_PORT);
 
-      sock.timeout(3, 0);
+      sock.s_timeout(3, 0);
       if (sock.connect()) {
           flag = true;
       }
@@ -61,30 +62,30 @@ void health_server() {
         checksum2.update(key);
         checksum2.update(msg);
         msg = checksum2.final();
-
-        DumpHex(msg);
+        std::cout << "Except : " << msg << std::endl;
+        //DumpHex(msg);
 
         std::string buffer;
-        if (sock.recv(buffer) > 0) {
-
-        }
-        DumpHex(buffer);
+        if (sock.recv(buffer) > 0) { }
+        //DumpHex(buffer);
 
 
         if (buffer.substr(0, 2).compare(PONG_PREFIX) == 0) {
           int len = buffer.size();
-          std::cout << len <<std::endl;
+          //std::cout << len <<std::endl;
           if (buffer.substr(len - 2, 2).compare(PONG_POSTFIX) == 0) {
             buffer = buffer.substr(2, len - 4);
-            DumpHex(buffer);
+            //DumpHex(buffer);
+            std::cout << "Recieve: " << msg << std::endl;
             if (msg.compare(buffer) == 0) {
                 flag = true;
             }
           }
         }
       } // end if flag
-      std::cout << "RESULT:" <<  (int) flag << std::endl;
+      //std::cout << "RESULT:" <<  (int) flag << std::endl;
       if (flag == false) {
+        std::cout << "[HEALTH] Check failed for '"<< github_id << "', EXTERMINATE!" << std::endl;
         Client_REST::delete_node(node.github_id());
       }
     }

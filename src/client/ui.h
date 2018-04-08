@@ -4,10 +4,12 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "messanger.h"
+//#include "messanger.h"
 
 #define KEY_ESCAPE 27
 #define KEY_ENTER2 10
+
+class Messanger;
 
 class UI {
   Messanger *msgr;
@@ -16,6 +18,7 @@ class UI {
   std::map<std::string, std::vector<std::string>> chat;
   std::vector<std::string> userlist;
   WINDOW *current;
+  std::string opened_current;
 public:
   UI(Messanger *msg);
   ~UI();

@@ -43,7 +43,7 @@ void boradcast_listener() {
   struct sockaddr_in bcastAddr;
 
   s = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  if (s == NULL) {
+  if (s == 0) {
     perror("sockek");
     exit(1);
   }
@@ -91,7 +91,8 @@ void boradcast_listener() {
     }
 
     if (!github_id.empty()) {
-      puts("recvfrom");
+      //puts("recvfrom");
+      std::cout << "[BROADCAST] " << github_id << " is here!" << std::endl;
       ip_addr = inet_ntoa(clntAddr.sin_addr);
 
       github_id.erase(std::find_if(github_id.rbegin(), github_id.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), github_id.end());
