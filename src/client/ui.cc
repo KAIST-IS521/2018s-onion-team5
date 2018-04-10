@@ -27,7 +27,7 @@ COLOR_BLUE COLOR_MAGENTA COLOR_CYAN COLOR_WHITE
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLACK); // foreground, background
 	init_pair(2, COLOR_WHITE, COLOR_BLUE);
-	init_pair(3, COLOR_WHITE, COLOR_YELLOW);
+	init_pair(3, COLOR_BLACK, COLOR_YELLOW);
 	init_pair(4, COLOR_BLACK, COLOR_WHITE);
 	curs_set(2);
 	noecho();
@@ -229,6 +229,10 @@ void UI::chat_room(int idx) {
       this->push_message(name, this->msgr->get_name() + ": " + message);
       message.clear();
       continue;
+    } else if( key == KEY_F(5)){
+    	wclear(chat_window[2]);
+    	wnoutrefresh(chat_window[2]);
+    	continue;
     }
     if (message_idx < 200) {
       message += ((char) key & 0xFF);
@@ -261,6 +265,11 @@ void UI::refresh_chatlog(std::string name) {
   //DumpHex(current[0]); getchar();
   int offset = 0;
   for (auto it = current.begin(); it != current.end(); ++it) {
+  	if(offset + (*it).size() / 40 + 1 > 20){
+  		wclear(this->current);
+  		wnoutrefresh(this->current);
+  		offset = 0;
+  	}
     mvwprintw(this->current, offset, 0, "%s", (*it).c_str());
     offset += (*it).size() / 40 + 1;
   }
