@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   for (;!msgr.is_authed(); sleep(1));
   if (!msgr.is_authorized()) {
     interface_th.join();
-    exit(1);
+    kill(getpid(), 2);
   }
 
   std::thread thread_liste(liste_loop, std::ref(msgr));
@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
   //thread_liste.join();
   //thread_adver.join();
   //thread_input.join();
+  kill(getpid(), 2);
 
   return 0;
 }
