@@ -121,7 +121,9 @@ bool Messanger::send_message(std::string to, std::string content) {
   }
 
   TCP_Client clnt(this->node_list[str_next], NODE_PORT);
-  clnt.connect();
+  if (!clnt.connect()) {
+    return false;
+  }
   clnt.send_file(filename);
   clnt.close();
 

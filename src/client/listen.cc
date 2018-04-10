@@ -140,9 +140,10 @@ void liste_loop(Messanger &msgr) {
 
         //std::cout << "[!] Relay to " << m.getTo() << std::endl;
         TCP_Client clnt(list[m.getTo()], NODE_PORT);
-        clnt.connect();
-        clnt.send_file(filename);
-        clnt.close();
+        if (clnt.connect()) {
+          clnt.send_file(filename);
+          clnt.close();
+        }
 
         //std::cout << "[!] Delete " << filename << std::endl;
         delete_file(filename);

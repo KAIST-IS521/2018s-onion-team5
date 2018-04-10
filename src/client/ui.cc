@@ -232,9 +232,11 @@ void UI::chat_room(int idx) {
     } else if( key == KEY_F(5)){
     	wclear(chat_window[2]);
     	wnoutrefresh(chat_window[2]);
+      this->chat[name].clear();
     	continue;
     }
-    if (message_idx < 200) {
+    if (((char) key & 0xFF) == '\x09') continue;
+    if (message.size() < 200) {
       message += ((char) key & 0xFF);
     }
   }

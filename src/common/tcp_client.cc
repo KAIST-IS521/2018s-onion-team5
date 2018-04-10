@@ -57,7 +57,7 @@ bool TCP_Client::connect() {
   if (this->client == false) return false;
 
   if (::connect(this->client_sock, (struct sockaddr *) &this->client_sockaddr, sizeof(struct sockaddr_in)) == -1) {
-    ::perror("connect");
+    //::perror("connect");
     return false;
   }
   return true;
