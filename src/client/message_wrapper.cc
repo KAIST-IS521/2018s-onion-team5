@@ -59,7 +59,6 @@ void Message::clear() {
 }
 
 std::string Message::serialize() {
-
   std::string locate = get_temppath();
   time_t t = 0;
   size_t s = 0;
@@ -117,14 +116,15 @@ std::string Message::serialize() {
 }
 
 bool Message::deserialize(std::string input) {
+  char buff[1024 + 1] = {0};
+  size_t read_size;
+
   bool ret = false;
   time_t t = 0;
   size_t s = 0;
 
   std::ifstream is;
   is.open(input, std::ifstream::binary);
-  char buff[1024 + 1] = {0};
-  size_t read_size;
 
 
   if (!is) {
@@ -142,8 +142,8 @@ bool Message::deserialize(std::string input) {
   s = BSWAP64(s);
   this->from.resize(s);
 
-  is.read(buff, sizeof(char) * s);
-  this->from.assign(buff, s);
+  is.read(buff, sizeof(char) * s); // problem
+  this->from.assign(buff, s);//
 
   is.read((char *) &s, sizeof(size_t));
   s = BSWAP64(s);

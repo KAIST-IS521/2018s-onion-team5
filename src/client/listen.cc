@@ -18,7 +18,6 @@
 
 
 void liste_loop(Messanger &msgr) {
-  //std::thread thread_liste(liste_loop, std::ref(msgr));
   std::string github_id = msgr.get_name();
   std::map<std::string, std::string> &list = msgr.get_node_list();
   GPG &g = msgr.getGPG();
@@ -28,34 +27,24 @@ void liste_loop(Messanger &msgr) {
   if (!server.bind()) {
     return;
   }
-  //std::cout << "Ok to bind" << std::endl;
 
   if (!server.listen()) {
     return;
   }
-  //std::cout << "Ok to listen" << std::endl;
 
   GOOGLE_PROTOBUF_VERIFY_VERSION;
+  TCP_Client *client = NULL;
 	for (;;) {
-    TCP_Client * client = server.accept();
+    if (client) {
+      client->close();
+      client = NULL;
+    }
+    client = server.accept();
 
     std::string msg;
     int size = client->recv(msg);
-    //puts("===============================================================");
-    //DumpHex(msg);
-    //puts("===============================================================");
 
-    // node list
-
-    /*
-    if (msg.substr(0, 2).compare("\x2F\x74") == 0) {
-      DumpHex(msg);
-      std::string cmdasdfasd = "xxd "+ msg;
-      system(cmdasdfasd.c_str());
-    }
-    */
     if (msg.substr(0, 2).compare(LIST_PREFIX) == 0) {
-      //std::cout << "LIST" << std::endl;
       int len = msg.size();
       if (msg.substr(len - 2, 2).compare(LIST_POSTFIX) == 0) {
         Onion5::NodeList node_list;
@@ -69,7 +58,6 @@ void liste_loop(Messanger &msgr) {
       }
     }
     else if (msg.substr(0, 2).compare(PING_PREFIX) == 0) {
-      //std::cout << "health" << std::endl;
       int len = msg.size();
       if (msg.substr(len - 2, 2).compare(PING_POSTFIX) == 0) {
         std::string key = msg.substr(2, len - 4);
@@ -86,7 +74,6 @@ void liste_loop(Messanger &msgr) {
         msg = checksum2.final();
 
         msg = PONG_PREFIX + msg + PONG_POSTFIX;
-        //DumpHex(msg);
 
         if (client->send(msg) != msg.size()) {
           continue;
@@ -100,21 +87,14 @@ void liste_loop(Messanger &msgr) {
         continue;
       }
 
-      //std::cout << "from: " << m.getFrom() <<  std::endl;
-      //std::cout << "to: " << m.getTo() <<  std::endl;
-      //std::cout << "type: " << m.getType() <<  std::endl;
-      //std::cout << "content: " << m.getContent() <<  std::endl;
-
       if (github_id.compare(m.getTo()) != 0) {
         // this is not my packet
-        //std::cout << "[!] this is not my packet" << std::endl;
         m.clear();
         continue;
       }
 
       if (m.getType() != 0) {
         // in this pharse it cannot be content or file
-        //std::cout << "[!] in this pharse it cannot be content or file" << std::endl;
         m.clear();
         continue;
       }
@@ -124,40 +104,26 @@ void liste_loop(Messanger &msgr) {
 
       if (!g.decrypt_file(filename, filename)) {
         // in this pharse it cannot be content or file
-        //std::cout << "[!] decrypt error" << std::endl;
         m.clear();
         continue;
       }
 
       m.deserialize(filename);
-      //std::cout << "from2: " << m.getFrom() <<  std::endl;
-      //std::cout << "to2: " << m.getTo() <<  std::endl;
-      //std::cout << "type2: " << m.getType() <<  std::endl;
-      //std::cout << "content2: " << m.getContent() <<  std::endl;
 
       if (github_id.compare(m.getFrom()) == 0) {
         filename = m.serialize();
 
-        //std::cout << "[!] Relay to " << m.getTo() << std::endl;
         TCP_Client clnt(list[m.getTo()], NODE_PORT);
         if (clnt.connect()) {
           clnt.send_file(filename);
           clnt.close();
         }
 
-        //std::cout << "[!] Delete " << filename << std::endl;
         delete_file(filename);
         continue;
       }
 
       if (github_id.compare(m.getTo()) == 0) {
-        //std::cout << "Oh! It's mine" << std::endl;
-        //std::cout << "===============================" << std::endl;
-        //std::cout << "from: " << m.getFrom() <<  std::endl;
-        //std::cout << "to: " << m.getTo() <<  std::endl;
-        //std::cout << "type: " << m.getType() <<  std::endl;
-        //std::cout << "content: " << m.getContent() <<  std::endl;
-        //std::cout << "===============================" << std::endl;
         if (m.getType() == 1) {
           msgr.push_message(m.getFrom(), m.getFrom() + ": " + m.getContent());
         } else if (m.getType() == 2) {
@@ -166,9 +132,6 @@ void liste_loop(Messanger &msgr) {
         m.clear();
         continue;
       }
-
-      //std::cout << "WTF" << std::endl;
-
     }
 	}
   server.close();

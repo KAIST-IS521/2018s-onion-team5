@@ -32,9 +32,6 @@ void health_server() {
 
       bool flag = false;
 
-      //DumpHex(github_id);
-      //DumpHex(ip_addr);
-
       TCP_Client sock(ip_addr.c_str(), NODE_PORT);
 
       sock.s_timeout(3, 0);
@@ -88,6 +85,7 @@ void health_server() {
         std::cout << "[HEALTH] Check failed for '"<< github_id << "', EXTERMINATE!" << std::endl;
         Client_REST::delete_node(node.github_id());
       }
+      sock.close();
     }
     sleep(3 * 60);
   }
